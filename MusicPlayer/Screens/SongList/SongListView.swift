@@ -10,26 +10,33 @@ import SwiftData
 import SDWebImageSwiftUI
 
 struct SongListView: View {
+    @EnvironmentObject private var router: NavigationRoute
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [.init(\Song.id, order: .reverse)], animation: .smooth) private var songs: [Song]
-    @EnvironmentObject private var router: NavigationRoute
     @StateObject private var downloadManager: DownloadManager = .shared
     
     var body: some View {
         List(songs, id: \.id) { song in
-            SongListRow(song: song, progressDict: $downloadManager.progressDict) {
-                // handle download button tap
-                if !song.isDownloaded {
-                    DownloadManager.shared.injectContext(modelContext)
-                    DownloadManager.shared.startDownload(from: song)
+            SongListRow(
+                song: song,
+                progressDict: $downloadManager.progressDict) { isPause in
+                    if isPause {
+                        downloadManager.resumeDownload(for: song)
+                    } else {
+                        downloadManager.pauseDownload(for: song.id)
+                    }
+                } onTapDownload: {
+                    if !song.isDownloaded {
+                        downloadManager.injectContext(modelContext)
+                        downloadManager.startDownload(from: song)
+                    }
                 }
-            }
-            .onTapGesture {
-                router.push(AnyScreen(MusicPlayerView(
-                    currentSong: song,
-                    progressDict: $downloadManager.progressDict
-                )))
-            }
+                .onTapGesture {
+                    router.push(AnyScreen(MusicPlayerView(
+                        currentSong: song,
+                        progressDict: $downloadManager.progressDict
+                    )))
+                }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Songs")
@@ -60,7 +67,7 @@ struct SongListView: View {
 extension SongListView {
     func fetchSongsFromServer() async {
         if songs.isEmpty {
-            if let response = await NetworService.shared.fetchSongsList(),
+            if let response = await NetworkService.shared.fetchSongsList(),
                let musicList = response.results, musicList.count > 0 {
                 debugPrint("RESPONSE", musicList)
                 musicList.forEach {

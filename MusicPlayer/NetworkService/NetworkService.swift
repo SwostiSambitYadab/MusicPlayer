@@ -7,13 +7,13 @@
 
 import Foundation
 
-final class NetworService {
-    static let shared = NetworService()
+final class NetworkService {
+    static let shared = NetworkService()
     private init() {}
     
     func fetchSongsList() async -> MusicListModel? {
         let clientID = "3d80b7b0"
-        let baseURLString = "https://api.jamendo.com/v3.0/tracks/?client_id=\(clientID)&format=json&limit=5"
+        let baseURLString = "https://api.jamendo.com/v3.0/tracks/?client_id=\(clientID)&format=json&limit=10"
         
         guard let baseURL = URL(string: baseURLString) else { return nil }
         let request = URLRequest(url: baseURL)

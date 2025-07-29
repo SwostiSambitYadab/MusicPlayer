@@ -20,7 +20,17 @@ class Song {
     var isDownloaded: Bool = false
     var localFileURL: String
     
-    init(id: String, title: String, audioUrl: String, audioImageUrl: String, releasedate: String, duration: Int, downloadUrl: String, isDownloaded: Bool = false, localFileUrl: String = "") {
+    init(
+        id: String,
+        title: String,
+        audioUrl: String,
+        audioImageUrl: String,
+        releasedate: String,
+        duration: Int,
+        downloadUrl: String,
+        isDownloaded: Bool = false,
+        localFileUrl: String = ""
+    ) {
         self.id = id
         self.title = title
         self.audioUrl = audioUrl
@@ -30,5 +40,17 @@ class Song {
         self.downloadUrl = downloadUrl
         self.isDownloaded = isDownloaded
         self.localFileURL = localFileUrl
+    }
+    
+    static var mock: Song {
+        return .init(
+            id: UUID().uuidString,
+            title: "Testing",
+            audioUrl: "https://abcd.mp3",
+            audioImageUrl: "https://image.com",
+            releasedate: "2004-12-12",
+            duration: 120,
+            downloadUrl: "https://abcd.mp3"
+        )
     }
 }

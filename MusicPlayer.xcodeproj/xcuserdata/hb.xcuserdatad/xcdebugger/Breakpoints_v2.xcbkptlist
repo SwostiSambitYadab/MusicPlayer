@@ -23,32 +23,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "CDD0FEBD-C172-4E7A-9E7A-CB360261263C"
+            uuid = "D149537A-D758-4ABA-955C-C369DE4FB40B"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "MusicPlayer/Helper/DownloadManager/DownloadManager.swift"
+            filePath = "MusicPlayer/Helper/MusicPlayerManager/MusicPlayerManager.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "59"
-            endingLineNumber = "59"
-            landmarkName = "urlSession(_:downloadTask:didFinishDownloadingTo:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "4DACA834-43F8-459B-BA7C-AA3A96ABEE8A"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "MusicPlayer/Helper/DownloadManager/DownloadManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "56"
-            endingLineNumber = "56"
-            landmarkName = "urlSession(_:downloadTask:didFinishDownloadingTo:)"
+            startingLineNumber = "32"
+            endingLineNumber = "32"
+            landmarkName = "setupAudioSession()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

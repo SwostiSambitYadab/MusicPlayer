@@ -17,20 +17,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         print("🌙 Resuming: \(identifier)")
         DownloadManager.shared.backgroundCompletionHandler = completionHandler
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if granted {
+                debugPrint("Notifications allowed")
+            }
+        }
     }
 }
 
 extension AppDelegate {
     private func setupAudioSession() {
-        
         let audioSession = AVAudioSession.sharedInstance()
-        
         do {
             try audioSession.setCategory(.playback, mode: .default)
         } catch {
             debugPrint("Unable to setup Audio session with error:: ", error.localizedDescription)
         }
     }
-    
-    
 }

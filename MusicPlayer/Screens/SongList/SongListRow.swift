@@ -11,8 +11,9 @@ import SDWebImageSwiftUI
 struct SongListRow: View {
     
     let song: Song
-    @Binding var progressDict: [String: Double]
-    let onTapRow: () -> Void
+    @Binding var progressDict: [String: Progress]
+    var onTapPauseResume: ((_ isPause: Bool) -> Void)? = nil
+    var onTapDownload: (() -> Void)? = nil
     
     var body: some View {
         HStack {
@@ -36,29 +37,44 @@ struct SongListRow: View {
             
             Group {
                 let progress = progressDict[song.id]
-                if let progress, progress > 0 , progress < 1 {
-                    Image(systemName: "square.fill")
-                        .font(.system(size: 16))
-                        .fontWeight(.medium)
-                        .foregroundStyle(.blue)
-                        .padding(4)
-                        .background(
-                            Circle()
-                                .trim(from: 0, to: progress)
-                                .stroke(Color.blue, lineWidth: 4)
-                                .rotationEffect(.degrees(-90))
-                        )
-                    
+                if let progress, progress.value > 0 , progress.value < 1 {
+                    ResumePauseDownloadSection(progress: progress)
+                        .onTapGesture {
+                            onTapPauseResume?(progress.isPause)
+                        }
                 } else {
                     Image(systemName: song.isDownloaded ? "checkmark.circle.fill"  : "arrow.down.circle.fill")
                         .font(.system(size: 22))
                         .fontWeight(.medium)
                         .foregroundStyle(song.isDownloaded ? .green : .gray)
                         .onTapGesture {
-                            onTapRow()
+                            onTapDownload?()
                         }
                 }
             }
         }
+    }
+}
+
+extension SongListRow {
+    private func ResumePauseDownloadSection(progress: Progress) -> some View {
+        Group {
+            if progress.isPause {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 18))
+            } else {
+                Image(systemName: "square.fill")
+                    .font(.system(size: 14))
+            }
+        }
+        .fontWeight(.medium)
+        .foregroundStyle(.blue)
+        .padding(8)
+        .background(
+            Circle()
+                .trim(from: 0, to: progress.value)
+                .stroke(Color.blue, lineWidth: 4)
+                .rotationEffect(.degrees(-90))
+        )
     }
 }

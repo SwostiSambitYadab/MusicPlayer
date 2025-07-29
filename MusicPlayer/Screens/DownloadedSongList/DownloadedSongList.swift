@@ -14,9 +14,7 @@ struct DownloadedSongList: View {
     
     var body: some View {
         List(songs, id: \.id) { song in
-            SongListRow(song: song, progressDict: .constant([:])) {
-                debugPrint("Tapped downloaded row")
-            }
+            SongListRow(song: song, progressDict: .constant([:]))
             .onTapGesture {
                 router.push(AnyScreen(MusicPlayerView(currentSong: song, progressDict: .constant([:]))))
             }

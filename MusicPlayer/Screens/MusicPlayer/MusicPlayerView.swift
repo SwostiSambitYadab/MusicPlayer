@@ -14,21 +14,11 @@ struct MusicPlayerView: View {
     @StateObject private var musicPlayerManager: MusicPlayerManager = .shared
     @StateObject private var downloadManager: DownloadManager = .shared
     let currentSong: Song
-    @Binding var progressDict: [String: Double]
+    @Binding var progressDict: [String: Progress]
     
     var body: some View {
         ZStack {
-            VStack {
-                WebImage(url: URL(string: currentSong.audioImageUrl)) { image in
-                    image
-                        .resizable()
-                } placeholder: {
-                    Color.gray
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: UIScreen.main.bounds.height / 2)
-            }
-            .frame(maxHeight: .infinity, alignment: .top)
+            BackgroundImageLayer()
             
             VStack(spacing: 8) {
                 Text(currentSong.title)
@@ -43,52 +33,20 @@ struct MusicPlayerView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack {
-                    Button {
-                        
-                    } label: {
-                        Image(systemName: "heart.fill")
-                            .foregroundStyle(.green)
-                            .font(.system(size: 22))
-                    }
+                    LikeButton()
                     
                     Group {
                         let progress = progressDict[currentSong.id]
-                        if let progress, progress > 0 , progress < 1 {
-                            Image(systemName: "square.fill")
-                                .font(.system(size: 14))
-                                .fontWeight(.medium)
-                                .foregroundStyle(.blue)
-                                .padding(8)
-                                .background(
-                                    Circle()
-                                        .trim(from: 0, to: progress)
-                                        .stroke(Color.blue, lineWidth: 4)
-                                        .rotationEffect(.degrees(-90))
-                                )
+                        if let progress, progress.value > 0 , progress.value < 1 {
+                            ResumePauseDownloadSection(progress: progress)
                         } else {
-                            Button {
-                                if !currentSong.isDownloaded {
-                                    downloadManager.injectContext(modelContext) 
-                                    downloadManager.startDownload(from: currentSong)
-                                }
-                            } label: {
-                                Image(systemName: currentSong.isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle.fill")
-                                    .foregroundStyle(currentSong.isDownloaded ? .green : .white)
-                                    .font(.system(size: 22))
-                            }
+                            DownloadButton()
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
-                Button {
-                    musicPlayerManager.isPlaying ? musicPlayerManager.pause() : musicPlayerManager.resume()
-                } label: {
-                    Image(systemName: musicPlayerManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.green)
-                }
-                .padding(.top, 32)
+                MusicPlayerPausePlayButton()
             }
             .offset(y: 120)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -112,4 +70,85 @@ struct MusicPlayerView: View {
         downloadUrl: "https://prod-1.storage.jamendo.com/download/track/168/mp32/",
         localFileUrl: ""
     ), progressDict: .constant([:]))
+}
+
+extension MusicPlayerView {
+    
+    private func BackgroundImageLayer() -> some View {
+        VStack {
+            WebImage(url: URL(string: currentSong.audioImageUrl)) { image in
+                image
+                    .resizable()
+            } placeholder: {
+                Color.gray
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: UIScreen.main.bounds.height / 2)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+    
+    
+    private func ResumePauseDownloadSection(progress: Progress) -> some View {
+        Group {
+            if progress.isPause {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 18))
+            } else {
+                Image(systemName: "square.fill")
+                    .font(.system(size: 14))
+            }
+        }
+        .fontWeight(.medium)
+        .foregroundStyle(.blue)
+        .padding(8)
+        .background(
+            Circle()
+                .trim(from: 0, to: progress.value)
+                .stroke(Color.blue, lineWidth: 4)
+                .rotationEffect(.degrees(-90))
+        )
+        .onTapGesture {
+            if progress.isPause {
+                downloadManager.resumeDownload(for: currentSong)
+            } else {
+                downloadManager.pauseDownload(for: currentSong.id)
+            }
+            
+        }
+    }
+    
+    private func DownloadButton() -> some View {
+        Button {
+            if !currentSong.isDownloaded {
+                downloadManager.injectContext(modelContext)
+                downloadManager.startDownload(from: currentSong)
+            }
+        } label: {
+            Image(systemName: currentSong.isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle.fill")
+                .foregroundStyle(currentSong.isDownloaded ? .green : .white)
+                .font(.system(size: 22))
+        }
+    }
+    
+    private func LikeButton() -> some View {
+        Button {
+            
+        } label: {
+            Image(systemName: "heart.fill")
+                .foregroundStyle(.green)
+                .font(.system(size: 22))
+        }
+    }
+    
+    private func MusicPlayerPausePlayButton() -> some View {
+        Button {
+            musicPlayerManager.isPlaying ? musicPlayerManager.pause() : musicPlayerManager.resume()
+        } label: {
+            Image(systemName: musicPlayerManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.green)
+        }
+        .padding(.top, 32)
+    }
 }
