@@ -10,6 +10,7 @@ import SDWebImageSwiftUI
 import SwiftData
 
 struct MusicPlayerView: View {
+    @Environment(\.musicPlayerVisibility) private var musicPlayerVisibility
     @Environment(\.modelContext) private var modelContext
     @StateObject private var musicPlayerManager: MusicPlayerManager = .shared
     @StateObject private var downloadManager: DownloadManager = .shared
@@ -46,6 +47,8 @@ struct MusicPlayerView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
+                MusicSlider()
+                
                 MusicPlayerPausePlayButton()
             }
             .offset(y: 120)
@@ -54,7 +57,13 @@ struct MusicPlayerView: View {
             .background(.linearGradient(colors: [.clear, .gray, .black], startPoint: .top, endPoint: .bottom))
         }
         .task {
-            musicPlayerManager.playStream(currSong: currentSong)
+            musicPlayerManager.checkIfSameMusicIsPlaying(currentSong)
+        }
+        .onAppear {
+            musicPlayerVisibility.wrappedValue = false
+        }
+        .onDisappear {
+            musicPlayerVisibility.wrappedValue = true
         }
     }
 }
@@ -100,12 +109,12 @@ extension MusicPlayerView {
             }
         }
         .fontWeight(.medium)
-        .foregroundStyle(.blue)
+        .foregroundStyle(.green)
         .padding(8)
         .background(
             Circle()
                 .trim(from: 0, to: progress.value)
-                .stroke(Color.blue, lineWidth: 4)
+                .stroke(Color.green, lineWidth: 4)
                 .rotationEffect(.degrees(-90))
         )
         .onTapGesture {
@@ -151,4 +160,32 @@ extension MusicPlayerView {
         }
         .padding(.top, 32)
     }
+    
+    private func MusicSlider() -> some View {
+        VStack(spacing: 16) {
+            SwiftUI.Slider(
+                value: $musicPlayerManager.currentTime,
+                in: 0...musicPlayerManager.duration,
+                onEditingChanged: { isEditing in
+                if !isEditing {
+                    musicPlayerManager.seek(to: musicPlayerManager.currentTime)
+                }
+            })
+            .accentColor(.green)
+            
+            HStack {
+                Text(formatTime(musicPlayerManager.currentTime))
+                Spacer()
+                Text(formatTime(musicPlayerManager.duration))
+            }
+            .font(.caption)
+        }
+        .padding()
+    }
+}
+
+public func formatTime(_ time: Double) -> String {
+    let minutes = Int(time) / 60
+    let seconds = Int(time) % 60
+    return String(format: "%d:%02d", minutes, seconds)
 }

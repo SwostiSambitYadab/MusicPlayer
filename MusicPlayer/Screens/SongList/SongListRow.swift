@@ -68,12 +68,12 @@ extension SongListRow {
             }
         }
         .fontWeight(.medium)
-        .foregroundStyle(.blue)
+        .foregroundStyle(.green)
         .padding(8)
         .background(
             Circle()
                 .trim(from: 0, to: progress.value)
-                .stroke(Color.blue, lineWidth: 4)
+                .stroke(Color.green, lineWidth: 4)
                 .rotationEffect(.degrees(-90))
         )
     }

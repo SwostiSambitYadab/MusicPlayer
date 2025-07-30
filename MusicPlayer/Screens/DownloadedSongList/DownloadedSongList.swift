@@ -13,10 +13,17 @@ struct DownloadedSongList: View {
     let songs: [Song]
     
     var body: some View {
-        List(songs, id: \.id) { song in
-            SongListRow(song: song, progressDict: .constant([:]))
-            .onTapGesture {
-                router.push(AnyScreen(MusicPlayerView(currentSong: song, progressDict: .constant([:]))))
+        List {
+            Section {
+                ForEach(songs) { song in
+                    SongListRow(song: song, progressDict: .constant([:]))
+                    .onTapGesture {
+                        router.push(AnyScreen(MusicPlayerView(currentSong: song, progressDict: .constant([:]))))
+                    }
+                }
+            } footer: {
+                Color.clear
+                    .frame(height: 120)
             }
         }
         .listStyle(.insetGrouped)

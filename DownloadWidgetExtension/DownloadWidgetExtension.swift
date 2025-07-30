@@ -13,13 +13,20 @@ struct DownloadWidgetExtension: Widget {
         ActivityConfiguration(
             for: DownloadAttributes.self) { context in
                 // Lock screen & Dynamic Island Expanded
-                if !context.state.isCompleted {
-                    DownloadProgressView(
-                        context.state.title,
-                        progress: context.state.progress
-                    )
-                } else {
-                    CompletedSection()
+                ZStack {
+                    Color.black
+                        .ignoresSafeArea()
+                        .background(.ultraThickMaterial)
+                    
+                    if !context.state.isCompleted {
+                        DownloadProgressView(
+                            context.state.title,
+                            progress: context.state.progress,
+                            isPaused: context.state.isPaused
+                        )
+                    } else {
+                        CompletedSection()
+                    }
                 }
             } dynamicIsland: { context in
                 DynamicIsland {
@@ -46,17 +53,24 @@ struct DownloadWidgetExtension: Widget {
 }
 
 extension DownloadWidgetExtension {
-    private func DownloadProgressView(_ title: String, progress: Double) -> some View {
+    private func DownloadProgressView(_ title: String, progress: Double, isPaused: Bool) -> some View {
         HStack(spacing: 0) {
             Text("Downloading")
                 .font(.headline)
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
             Spacer(minLength: 4)
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
             Spacer(minLength: 4)
-            CircularProgressView(progress)
+            
+            if isPaused {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.green)
+            } else {
+                CircularProgressView(progress)
+            }
         }
         .padding(.horizontal)
     }

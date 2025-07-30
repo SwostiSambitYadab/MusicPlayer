@@ -14,14 +14,20 @@ class MusicPlayerManager: ObservableObject {
     
     private var player: AVPlayer?
     private var timerObservationToken: Any?
-    private var currentSong: Song?
     private var artworkImage: MPMediaItemArtwork?
+    var currentSong: Song?
     
     @Published var isPlaying = false
+    @Published var currentTime: Double = 0
+    @Published var duration: Double = 0
     
     private init() {
         setupRemoteTransportControls()
         setupAudioSession()
+    }
+    
+    deinit {
+        timerObservationToken = nil
     }
     
     private func setupAudioSession() {
@@ -78,10 +84,11 @@ class MusicPlayerManager: ObservableObject {
     
     func cleanup() {
         player?.pause()
+        isPlaying = false
         player = nil
     }
     
-    private func seek(to time: TimeInterval) {
+    func seek(to time: TimeInterval) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         player?.seek(to: cmTime)
     }
@@ -105,12 +112,31 @@ class MusicPlayerManager: ObservableObject {
             self?.updateNowPlayingInfo()
         }
     }
+    
+    private func addTimerObserver() {
+        let interval = CMTime(seconds: 1, preferredTimescale: 600)
+        timerObservationToken = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            self?.currentTime = CMTimeGetSeconds(time)
+        }
+    }
+    
+    // Update duration when ready
+    private func updateDuration(playerItem: AVPlayerItem) {
+        Task {
+            do {
+                let duration = try await playerItem.asset.load(.duration)
+                await MainActor.run {
+                    self.duration = CMTimeGetSeconds(duration)
+                }
+            } catch {
+                debugPrint("Failed to get duration: ", error.localizedDescription)
+            }
+        }
+    }
 }
 
 extension MusicPlayerManager {
-    func playStream(currSong: Song) {
-        // cleaning up before starting new track
-        cleanup()
+    private func playStream(currSong: Song) {
         // taking url from localFile if downloaded
         let urlString = currSong.isDownloaded ? currSong.localFileURL : currSong.audioUrl
         debugPrint("Playing URL: \(urlString)")
@@ -122,7 +148,21 @@ extension MusicPlayerManager {
         player = AVPlayer(playerItem: playerItem)
         player?.play()
         isPlaying = true
+        addTimerObserver()
+        if !currSong.isDownloaded {
+            updateDuration(playerItem: playerItem)
+        } else {
+            duration = Double(currSong.duration)
+        }
         updateNowPlayingInfo()
+    }
+    
+    
+    func checkIfSameMusicIsPlaying(_ song: Song) {
+        if player == nil || currentSong?.id != song.id {
+            cleanup()
+            playStream(currSong: song)
+        }
     }
     
     func pause() {

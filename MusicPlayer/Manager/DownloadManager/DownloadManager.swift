@@ -24,8 +24,8 @@ class DownloadManager: NSObject, ObservableObject {
     @Published var progressDict: [String: Progress] = [:]
     
     /// - For Live Activity
-    private var activity: Activity<DownloadAttributes>? = nil
-    private var songTitle: String = ""
+    private var activities: [Activity<DownloadAttributes>] = []
+    private var songMetaData: [String: Song] = [:]
     
     /// - To Pause/Resume Download Tasks
     private var activeDownloads: [String: URLSessionDownloadTask] = [:]
@@ -53,24 +53,13 @@ class DownloadManager: NSObject, ObservableObject {
         guard let url = URL(string: song.downloadUrl) else { return }
         // guard let url = URL(string: "https://speedtest.tokyo2.linode.com/100MB-tokyo.bin") else { return }
         let task = backgroundSession.downloadTask(with: url)
-        songTitle = song.title
         task.taskDescription = song.id
+        songMetaData[song.id] = song
         activeDownloads[song.id] = task
         task.resume()
         
         // start Live Activity
-        let attributes = DownloadAttributes(songID: song.id, songTitle: song.title)
-        let contentState = DownloadAttributes.ContentState(progress: 0.0, title: song.title)
-        
-        if ActivityAuthorizationInfo().areActivitiesEnabled {
-            let activityContent = ActivityContent(state: contentState, staleDate: nil)
-            do {
-                activity = try Activity<DownloadAttributes>.request(attributes: attributes, content: activityContent)
-                debugPrint(activity ?? "")
-            } catch {
-                debugPrint("Live Activity Failed: ", error.localizedDescription)
-            }
-        }
+        startLiveActivity(for: song)
     }
     
     /// - For Pausing Download
@@ -80,6 +69,15 @@ class DownloadManager: NSObject, ObservableObject {
             guard let `self` else { return }
             resumeDataDict[songID] = resumeData
             activeDownloads[songID] = nil
+            
+            let songTitle = songMetaData[songID]?.title ?? ""
+            let contentState = DownloadAttributes.ContentState(progress: progressDict[songID]?.value ?? 0.0, title: songTitle, isPaused: true)
+            Task {
+                if let activity = self.activities.first(where: { $0.attributes.songID == songID }) {
+                    await activity.update(ActivityContent(state: contentState, staleDate: nil))
+                }
+            }
+            
             DispatchQueue.main.async {
                 self.progressDict[songID]?.isPause = true
             }
@@ -100,8 +98,8 @@ class DownloadManager: NSObject, ObservableObject {
         progressDict[song.id]?.isPause = false
         activeDownloads[song.id] = task
         resumeDataDict[song.id] = nil
+        updateLiveActivity(for: song.id, progress: progressDict[song.id]?.value ?? 0.0)
         task.resume()
-        
         debugPrint("🔁 Resumed download for: \(song.id)")
     }
 }
@@ -121,16 +119,17 @@ extension DownloadManager: URLSessionDownloadDelegate {
             // saving file in the destination location
             try fileManager.moveItem(at: location, to: destination)
             debugPrint("✅ File Saved to \(destination)")
-            let endState = DownloadAttributes.ContentState(progress: 1.0, title: songTitle, isCompleted: true)
             
+            // updating completed state of Live Activity
+            let songTitle = songMetaData[downloadTask.taskDescription ?? ""]?.title ?? ""
+            let completedState = DownloadAttributes.ContentState(progress: 1.0, title: songTitle, isCompleted: true)
             Task {
-                if let activity = self.activity {
-                    await activity.update(ActivityContent(state: endState, staleDate: nil))
+                if let activity = activities.first(where: { $0.attributes.songID == downloadTask.taskDescription }) {
+                    await activity.update(ActivityContent(state: completedState, staleDate: nil))
+                    activities.removeAll(where: { $0.attributes.songID == activity.attributes.songID })
                 }
-                activity = nil
             }
-            
-            
+             
             // update swift Data
             try updateSwiftData(destination: destination, downloadTask: downloadTask)
             
@@ -155,13 +154,8 @@ extension DownloadManager: URLSessionDownloadDelegate {
         DispatchQueue.main.async {
             let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
             self.progressDict[songID] = .init(value: progress, isPause: false)
-            Task {
-                let contentState = DownloadAttributes.ContentState(progress: progress, title: self.songTitle)
-                if let activity = self.activity {
-                    await activity.update(ActivityContent(state: contentState, staleDate: nil))
-                }
-            }
         }
+        updateLiveActivity(for: songID, progress: progress)
     }
 }
 
@@ -188,6 +182,37 @@ extension DownloadManager {
             try modelContext?.save()
         } catch {
             debugPrint("Failed to save context: ", error.localizedDescription)
+        }
+    }
+}
+
+/// - For Live Activity
+extension DownloadManager {
+    private func startLiveActivity(for song: Song) {
+        let attributes = DownloadAttributes(songID: song.id, songTitle: song.title)
+        let contentState = DownloadAttributes.ContentState(progress: 0.0, title: song.title)
+        
+        if ActivityAuthorizationInfo().areActivitiesEnabled {
+            let activityContent = ActivityContent(state: contentState, staleDate: nil)
+            do {
+                if !activities.contains(where: { $0.attributes.songID == song.id }) {
+                    let activity = try Activity<DownloadAttributes>.request(attributes: attributes, content: activityContent)
+                    debugPrint(activity)
+                    activities.append(activity)
+                }
+            } catch {
+                debugPrint("Live Activity Failed: ", error.localizedDescription)
+            }
+        }
+    }
+    
+    private func updateLiveActivity(for songID: String, progress: Double ) {
+        let songTitle = songMetaData[songID]?.title ?? ""
+        let contentState = DownloadAttributes.ContentState(progress: progress, title: songTitle)
+        Task {
+            if let activity = activities.first(where: { $0.attributes.songID == songID }) {
+                await activity.update(ActivityContent(state: contentState, staleDate: nil))
+            }
         }
     }
 }

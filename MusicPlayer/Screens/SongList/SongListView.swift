@@ -16,27 +16,35 @@ struct SongListView: View {
     @StateObject private var downloadManager: DownloadManager = .shared
     
     var body: some View {
-        List(songs, id: \.id) { song in
-            SongListRow(
-                song: song,
-                progressDict: $downloadManager.progressDict) { isPause in
-                    if isPause {
-                        downloadManager.resumeDownload(for: song)
-                    } else {
-                        downloadManager.pauseDownload(for: song.id)
-                    }
-                } onTapDownload: {
-                    if !song.isDownloaded {
-                        downloadManager.injectContext(modelContext)
-                        downloadManager.startDownload(from: song)
-                    }
+        List {
+            Section {
+                ForEach(songs) { song in
+                    SongListRow(
+                        song: song,
+                        progressDict: $downloadManager.progressDict) { isPause in
+                            if isPause {
+                                downloadManager.resumeDownload(for: song)
+                            } else {
+                                downloadManager.pauseDownload(for: song.id)
+                            }
+                        } onTapDownload: {
+                            if !song.isDownloaded {
+                                downloadManager.injectContext(modelContext)
+                                downloadManager.startDownload(from: song)
+                            }
+                        }
+                        .onTapGesture {
+                            router.push(AnyScreen(MusicPlayerView(
+                                currentSong: song,
+                                progressDict: $downloadManager.progressDict
+                            )))
+                        }
                 }
-                .onTapGesture {
-                    router.push(AnyScreen(MusicPlayerView(
-                        currentSong: song,
-                        progressDict: $downloadManager.progressDict
-                    )))
-                }
+            } footer: {
+                // For adding some padding for the mini music player
+                Color.clear
+                    .frame(height: 120)
+            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Songs")
@@ -55,7 +63,7 @@ struct SongListView: View {
             await fetchSongsFromServer()
         }
         .onAppear {
-            MusicPlayerManager.shared.cleanup()
+            // MusicPlayerManager.shared.cleanup()
         }
     }
 }

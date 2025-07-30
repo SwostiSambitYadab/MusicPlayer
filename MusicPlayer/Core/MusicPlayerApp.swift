@@ -12,6 +12,8 @@ import SwiftData
 struct MusicPlayerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var navigationRoute = NavigationRoute()
+    @State private var musicPlayerVisibility: Bool = false
+    
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $navigationRoute.path) {
@@ -20,8 +22,21 @@ struct MusicPlayerApp: App {
                         screen.build()
                     }
             }
+            .overlay(alignment: .bottom) {
+                    MusicPlayerMiniView()
+                        .offset(y: musicPlayerVisibility ? 0 : 300)
+                        .transition(.push(from: .bottom))
+            }
+            .animation(.easeIn(duration: 0.5), value: musicPlayerVisibility)
+            .environment(\.musicPlayerVisibility, $musicPlayerVisibility)
             .modelContainer(for: Song.self)
             .environmentObject(navigationRoute)
+            .preferredColorScheme(.dark)
         }
     }
+}
+
+
+extension EnvironmentValues {
+    @Entry var musicPlayerVisibility: Binding<Bool> = .constant(false)
 }

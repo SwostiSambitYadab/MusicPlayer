@@ -12,6 +12,7 @@ struct DownloadAttributes: ActivityAttributes {
         var progress: Double
         var title: String
         var isCompleted: Bool = false
+        var isPaused: Bool = false
     }
     let songID: String
     let songTitle: String
