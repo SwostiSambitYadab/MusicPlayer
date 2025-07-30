@@ -18,7 +18,7 @@ class Song {
     var duration: Int
     var downloadUrl: String
     var isDownloaded: Bool = false
-    var localFileURL: String
+    var localFileURL: String = ""
     
     init(
         id: String,

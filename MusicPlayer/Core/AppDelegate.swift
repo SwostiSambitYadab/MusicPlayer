@@ -11,17 +11,17 @@ import AVKit
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         setupAudioSession()
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if granted {
+                debugPrint("Notifications allowed")
+            }
+        }
         return true
     }
     
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         print("🌙 Resuming: \(identifier)")
         DownloadManager.shared.backgroundCompletionHandler = completionHandler
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            if granted {
-                debugPrint("Notifications allowed")
-            }
-        }
     }
 }
 

@@ -76,8 +76,7 @@ struct MusicPlayerView: View {
         audioImageUrl: "",
         releasedate: "23/09/2022",
         duration: 110,
-        downloadUrl: "https://prod-1.storage.jamendo.com/download/track/168/mp32/",
-        localFileUrl: ""
+        downloadUrl: "https://prod-1.storage.jamendo.com/download/track/168/mp32/"
     ), progressDict: .constant([:]))
 }
 

@@ -28,6 +28,7 @@ class MusicPlayerManager: ObservableObject {
     
     deinit {
         timerObservationToken = nil
+        NotificationCenter.default.removeObserver(self, name: AVPlayerItem.didPlayToEndTimeNotification, object: nil)
     }
     
     private func setupAudioSession() {
@@ -86,11 +87,14 @@ class MusicPlayerManager: ObservableObject {
         player?.pause()
         isPlaying = false
         player = nil
+        currentTime = 0
     }
     
     func seek(to time: TimeInterval) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
-        player?.seek(to: cmTime)
+        player?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+            self?.updateNowPlayingInfo()
+        }
     }
     
     private func skipForward() {
@@ -120,6 +124,19 @@ class MusicPlayerManager: ObservableObject {
         }
     }
     
+    private func addPlayerObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(playerDidFinishPlaying),
+            name: AVPlayerItem.didPlayToEndTimeNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func playerDidFinishPlaying() {
+        cleanup()
+    }
+    
     // Update duration when ready
     private func updateDuration(playerItem: AVPlayerItem) {
         Task {
@@ -136,11 +153,23 @@ class MusicPlayerManager: ObservableObject {
 }
 
 extension MusicPlayerManager {
-    private func playStream(currSong: Song) {
-        // taking url from localFile if downloaded
-        let urlString = currSong.isDownloaded ? currSong.localFileURL : currSong.audioUrl
-        debugPrint("Playing URL: \(urlString)")
-        guard let url = URL(string: urlString) else { return }
+    func playStream(currSong: Song) {
+        
+        let fileURL = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent(currSong.localFileURL)
+        
+        if currSong.isDownloaded {
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                print("✅ Local file exists at: \(currSong.localFileURL)")
+            } else {
+                print("❌ Local file does not exist at: \(currSong.localFileURL)")
+            }
+        }
+        
+        guard let url = currSong.isDownloaded ? fileURL : URL(string: currSong.audioUrl) else { return }
+        debugPrint("Playing URL: \(url)")
         currentSong = currSong
         
         // setting up player
@@ -149,6 +178,7 @@ extension MusicPlayerManager {
         player?.play()
         isPlaying = true
         addTimerObserver()
+        addPlayerObserver()
         if !currSong.isDownloaded {
             updateDuration(playerItem: playerItem)
         } else {

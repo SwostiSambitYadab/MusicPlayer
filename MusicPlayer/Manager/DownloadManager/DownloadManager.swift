@@ -169,7 +169,8 @@ extension DownloadManager {
         
         if let existingSong = try modelContext.fetch(fetchRequest).first {
             existingSong.isDownloaded = true
-            existingSong.localFileURL = destination.description
+            debugPrint("SAVED PATH:: ", destination.lastPathComponent)
+            existingSong.localFileURL = destination.lastPathComponent
             DispatchQueue.main.async {
                 self.saveContext()
             }

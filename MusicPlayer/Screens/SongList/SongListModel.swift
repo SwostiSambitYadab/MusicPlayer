@@ -28,7 +28,7 @@ struct MusicListResult : Codable {
     func convertToSongs() -> Song {
         .init(
             id: id ?? UUID().uuidString,
-            title: albumName ?? "",
+            title: name ?? "",
             audioUrl: audio ?? "",
             audioImageUrl: albumImage ?? "",
             releasedate: releasedate ?? "",

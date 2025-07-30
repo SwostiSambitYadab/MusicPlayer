@@ -76,9 +76,13 @@ extension MusicPlayerMiniView {
             .foregroundStyle(.green)
             .onTapGesture {
                 if vm.isPlaying {
-                    vm.pause()
+                        vm.pause()
                 } else {
-                    vm.resume()
+                    if vm.currentTime == 0 {
+                        vm.playStream(currSong: vm.currentSong ?? .mock)
+                    } else {
+                        vm.resume()
+                    }
                 }
             }
     }
