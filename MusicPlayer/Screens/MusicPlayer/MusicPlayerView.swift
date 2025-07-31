@@ -15,7 +15,6 @@ struct MusicPlayerView: View {
     @StateObject private var musicPlayerManager: MusicPlayerManager = .shared
     @StateObject private var downloadManager: DownloadManager = .shared
     let currentSong: Song
-    @Binding var progressDict: [String: Progress]
     
     var body: some View {
         ZStack {
@@ -35,14 +34,18 @@ struct MusicPlayerView: View {
                 
                 HStack {
                     LikeButton()
-                    
-                    Group {
-                        let progress = progressDict[currentSong.id]
-                        if let progress, progress.value > 0 , progress.value < 1 {
-                            ResumePauseDownloadSection(progress: progress)
-                        } else {
-                            DownloadButton()
-                        }
+                    let downloadState = downloadManager.downloadStateDict[currentSong.id] ?? .idle
+                    switch downloadState {
+                    case .idle, .completed:
+                        DownloadButton()
+                    case .started:
+                        ResumePauseDownloadSection(
+                            progress: Progress(value: 0, isPause: false)
+                        )
+                    case .paused(let v), .inProgress(let v):
+                        ResumePauseDownloadSection(
+                            progress: Progress(value: v, isPause: downloadState.isPaused)
+                        )
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -77,7 +80,7 @@ struct MusicPlayerView: View {
         releasedate: "23/09/2022",
         duration: 110,
         downloadUrl: "https://prod-1.storage.jamendo.com/download/track/168/mp32/"
-    ), progressDict: .constant([:]))
+    ))
 }
 
 extension MusicPlayerView {

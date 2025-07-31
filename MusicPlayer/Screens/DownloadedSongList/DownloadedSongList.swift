@@ -16,9 +16,9 @@ struct DownloadedSongList: View {
         List {
             Section {
                 ForEach(songs) { song in
-                    SongListRow(song: song, progressDict: .constant([:]))
+                    SongListRow(song: song, downloadDict: .constant([:]))
                     .onTapGesture {
-                        router.push(AnyScreen(MusicPlayerView(currentSong: song, progressDict: .constant([:]))))
+                        router.push(AnyScreen(MusicPlayerView(currentSong: song)))
                     }
                 }
             } footer: {

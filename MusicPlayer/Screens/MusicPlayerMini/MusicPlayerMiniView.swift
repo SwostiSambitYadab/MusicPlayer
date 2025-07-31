@@ -27,7 +27,7 @@ struct MusicPlayerMiniView: View {
             CloseButton()
         }
         .onTapGesture {
-            router.push(AnyScreen(MusicPlayerView(currentSong: vm.currentSong ?? .mock, progressDict: .constant([:]))))
+            router.push(AnyScreen(MusicPlayerView(currentSong: vm.currentSong ?? .mock)))
         }
         .padding()
         .background(.thinMaterial, in: .rect(cornerRadius: 12))

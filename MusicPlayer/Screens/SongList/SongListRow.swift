@@ -10,20 +10,10 @@ import SDWebImageSwiftUI
 
 struct SongListRow: View {
     
-    @State private var didTapDownload: Bool = false
-    @Binding private var progressDict: [String: Progress]
-    private let song: Song
-    private let onTapPauseResume: ((_ isPause: Bool) -> Void)?
-    private let onTapDownload: (() -> Void)?
-    private let progress: Progress
-    
-    init(song: Song, progressDict: Binding<[String: Progress]>, onTapPauseResume: ((_ isPause: Bool) -> Void)? = nil, onTapDownload: (() -> Void)? = nil) {
-        self.song = song
-        _progressDict = progressDict
-        self.onTapPauseResume = onTapPauseResume
-        self.onTapDownload = onTapDownload
-        self.progress = progressDict.wrappedValue[song.id] ?? Progress(value: 0, isPause: false)
-    }
+    let song: Song
+    @Binding var downloadDict: [String: DownladState]
+    var onTapPauseResume: ((_ isPause: Bool) -> Void)? = nil
+    var onTapDownload: (() -> Void)? = nil
     
     var body: some View {
         HStack {
@@ -33,45 +23,56 @@ struct SongListRow: View {
                 .frame(width: 100, height: 100)
                 .background(.white, in: .rect(cornerRadius: 16))
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(song.title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                Text(song.releasedate)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            SongDetails()
             
             Spacer(minLength: 0)
             
-            Group {
-                if didTapDownload || (progress.value > 0 && progress.value < 1) {
-                    ResumePauseDownloadSection(progress: progress)
-                        .onTapGesture {
-                            onTapPauseResume?(progress.isPause)
-                        }
-                } else {
-                    Image(systemName: song.isDownloaded ? "checkmark.circle.fill"  : "arrow.down.circle.fill")
-                        .font(.system(size: 22))
-                        .fontWeight(.medium)
-                        .foregroundStyle(song.isDownloaded ? .green : .gray)
-                        .onTapGesture {
-                            didTapDownload = true
-                            onTapDownload?()
-                        }
-                }
-            }
-            .onChange(of: progress) { oldValue, newValue in
-                if newValue.value == 1 {
-                    didTapDownload = false
-                }
-            }
+            DownloadStateButton()
         }
     }
 }
 
 extension SongListRow {
+    
+    private func SongDetails() -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(song.title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            Text(song.releasedate)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    @ViewBuilder
+    private func DownloadStateButton() -> some View {
+        let downloadState = downloadDict[song.id] ?? .idle
+        
+        switch downloadState {
+        case .idle, .completed:
+            Image(systemName: song.isDownloaded ? "checkmark.circle.fill"  : "arrow.down.circle.fill")
+                .font(.system(size: 22))
+                .fontWeight(.medium)
+                .foregroundStyle(song.isDownloaded ? .green : .gray)
+                .onTapGesture {
+                    onTapDownload?()
+                }
+        case .started:
+            ResumePauseDownloadSection(progress: Progress(value: 0, isPause: false))
+                .onTapGesture {
+                    onTapPauseResume?(true)
+                }
+        case .paused(let v), .inProgress(let v):
+            ResumePauseDownloadSection(progress: Progress(value: v, isPause: downloadState.isPaused))
+                .onTapGesture {
+                    onTapPauseResume?(downloadState.isPaused)
+                }
+        }
+    }
+    
+    
     private func ResumePauseDownloadSection(progress: Progress) -> some View {
         Group {
             if progress.isPause {

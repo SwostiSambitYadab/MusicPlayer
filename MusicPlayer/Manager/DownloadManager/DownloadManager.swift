@@ -10,9 +10,22 @@ import SwiftData
 import ActivityKit
 
 
-struct Progress: Equatable {
+struct Progress {
     let value: Double
     var isPause: Bool
+}
+
+enum DownladState {
+    case idle
+    case started
+    case paused(Double)
+    case inProgress(Double)
+    case completed
+    
+    var isPaused: Bool {
+        if case .paused(_) = self { return true }
+        return false
+    }
 }
 
 class DownloadManager: NSObject, ObservableObject {
@@ -21,7 +34,8 @@ class DownloadManager: NSObject, ObservableObject {
     private var modelContext: ModelContext?
     
     /// - Progress Dict to show download progress
-    @Published var progressDict: [String: Progress] = [:]
+    private var progressDict: [String: Double] = [:]
+    @Published var downloadStateDict: [String: DownladState] = [:]
     
     /// - For Live Activity
     private var activities: [Activity<DownloadAttributes>] = []
@@ -56,6 +70,7 @@ class DownloadManager: NSObject, ObservableObject {
         task.taskDescription = song.id
         songMetaData[song.id] = song
         activeDownloads[song.id] = task
+        downloadStateDict[song.id] = .started
         task.resume()
         
         // start Live Activity
@@ -71,7 +86,7 @@ class DownloadManager: NSObject, ObservableObject {
             activeDownloads[songID] = nil
             
             let songTitle = songMetaData[songID]?.title ?? ""
-            let contentState = DownloadAttributes.ContentState(progress: progressDict[songID]?.value ?? 0.0, title: songTitle, isPaused: true)
+            let contentState = DownloadAttributes.ContentState(progress: progressDict[songID] ?? 0.0, title: songTitle, isPaused: true)
             Task {
                 if let activity = self.activities.first(where: { $0.attributes.songID == songID }) {
                     await activity.update(ActivityContent(state: contentState, staleDate: nil))
@@ -79,7 +94,7 @@ class DownloadManager: NSObject, ObservableObject {
             }
             
             DispatchQueue.main.async {
-                self.progressDict[songID]?.isPause = true
+                self.downloadStateDict[songID] = .paused(self.progressDict[songID] ?? 0)
             }
             debugPrint("⏸ Paused download for: \(songID)")
         }
@@ -90,15 +105,15 @@ class DownloadManager: NSObject, ObservableObject {
         guard let resumeData = resumeDataDict[song.id] else {
             // Fallback if not found any resumeData
             startDownload(from: song)
-            progressDict[song.id]?.isPause = false
+            downloadStateDict[song.id] = .started
             return
         }
         let task = backgroundSession.downloadTask(withResumeData: resumeData)
         task.taskDescription = song.id
-        progressDict[song.id]?.isPause = false
         activeDownloads[song.id] = task
         resumeDataDict[song.id] = nil
-        updateLiveActivity(for: song.id, progress: progressDict[song.id]?.value ?? 0.0)
+        downloadStateDict[song.id] = .inProgress(progressDict[song.id] ?? 0.0)
+        updateLiveActivity(for: song.id, progress: progressDict[song.id] ?? 0.0)
         task.resume()
         debugPrint("🔁 Resumed download for: \(song.id)")
     }
@@ -153,7 +168,8 @@ extension DownloadManager: URLSessionDownloadDelegate {
         guard let songID = downloadTask.taskDescription else { return }
         DispatchQueue.main.async {
             let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-            self.progressDict[songID] = .init(value: progress, isPause: false)
+            self.progressDict[songID] = progress
+            self.downloadStateDict[songID] = .inProgress(progress)
         }
         updateLiveActivity(for: songID, progress: progress)
     }
@@ -171,6 +187,7 @@ extension DownloadManager {
             existingSong.isDownloaded = true
             existingSong.localFileURL = destination.lastPathComponent
             DispatchQueue.main.async {
+                self.downloadStateDict[downloadTask.taskDescription ?? ""] = .completed
                 self.saveContext()
             }
         }

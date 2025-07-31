@@ -19,9 +19,7 @@ struct SongListView: View {
         List {
             Section {
                 ForEach(songs) { song in
-                    SongListRow(
-                        song: song,
-                        progressDict: $downloadManager.progressDict) { isPause in
+                    SongListRow(song: song, downloadDict: $downloadManager.downloadStateDict) { isPause in
                             if isPause {
                                 downloadManager.resumeDownload(for: song)
                             } else {
@@ -34,10 +32,7 @@ struct SongListView: View {
                             }
                         }
                         .onTapGesture {
-                            router.push(AnyScreen(MusicPlayerView(
-                                currentSong: song,
-                                progressDict: $downloadManager.progressDict
-                            )))
+                            router.push(AnyScreen(MusicPlayerView(currentSong: song)))
                         }
                 }
             } footer: {
@@ -61,9 +56,6 @@ struct SongListView: View {
         }
         .task {
             await fetchSongsFromServer()
-        }
-        .onAppear {
-            // MusicPlayerManager.shared.cleanup()
         }
     }
 }
