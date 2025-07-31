@@ -10,10 +10,20 @@ import SDWebImageSwiftUI
 
 struct SongListRow: View {
     
-    let song: Song
-    @Binding var progressDict: [String: Progress]
-    var onTapPauseResume: ((_ isPause: Bool) -> Void)? = nil
-    var onTapDownload: (() -> Void)? = nil
+    @State private var didTapDownload: Bool = false
+    @Binding private var progressDict: [String: Progress]
+    private let song: Song
+    private let onTapPauseResume: ((_ isPause: Bool) -> Void)?
+    private let onTapDownload: (() -> Void)?
+    private let progress: Progress
+    
+    init(song: Song, progressDict: Binding<[String: Progress]>, onTapPauseResume: ((_ isPause: Bool) -> Void)? = nil, onTapDownload: (() -> Void)? = nil) {
+        self.song = song
+        _progressDict = progressDict
+        self.onTapPauseResume = onTapPauseResume
+        self.onTapDownload = onTapDownload
+        self.progress = progressDict.wrappedValue[song.id] ?? Progress(value: 0, isPause: false)
+    }
     
     var body: some View {
         HStack {
@@ -36,8 +46,7 @@ struct SongListRow: View {
             Spacer(minLength: 0)
             
             Group {
-                let progress = progressDict[song.id]
-                if let progress, progress.value > 0 , progress.value < 1 {
+                if didTapDownload || (progress.value > 0 && progress.value < 1) {
                     ResumePauseDownloadSection(progress: progress)
                         .onTapGesture {
                             onTapPauseResume?(progress.isPause)
@@ -48,8 +57,14 @@ struct SongListRow: View {
                         .fontWeight(.medium)
                         .foregroundStyle(song.isDownloaded ? .green : .gray)
                         .onTapGesture {
+                            didTapDownload = true
                             onTapDownload?()
                         }
+                }
+            }
+            .onChange(of: progress) { oldValue, newValue in
+                if newValue.value == 1 {
+                    didTapDownload = false
                 }
             }
         }

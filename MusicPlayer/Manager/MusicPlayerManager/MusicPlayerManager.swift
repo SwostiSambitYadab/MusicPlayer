@@ -155,7 +155,7 @@ class MusicPlayerManager: ObservableObject {
 extension MusicPlayerManager {
     func playStream(currSong: Song) {
         
-        let fileURL = FileManager.default
+        var fileURL = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)
             .first!
             .appendingPathComponent(currSong.localFileURL)
@@ -165,6 +165,8 @@ extension MusicPlayerManager {
                 print("✅ Local file exists at: \(currSong.localFileURL)")
             } else {
                 print("❌ Local file does not exist at: \(currSong.localFileURL)")
+                /// Fallback play from online url instead
+                fileURL = URL(string: currSong.audioUrl)!
             }
         }
         

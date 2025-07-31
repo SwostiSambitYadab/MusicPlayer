@@ -10,7 +10,7 @@ import SwiftData
 import ActivityKit
 
 
-struct Progress {
+struct Progress: Equatable {
     let value: Double
     var isPause: Bool
 }
@@ -49,9 +49,9 @@ class DownloadManager: NSObject, ObservableObject {
     /// - For Starting the download of the song
     /// Stored songId in downloadTask's task description .
     /// Used the songId in updating swiftData after download and updating progress
+    /// "https://speedtest.tokyo2.linode.com/100MB-tokyo.bin"
     func startDownload(from song: Song) {
         guard let url = URL(string: song.downloadUrl) else { return }
-        // guard let url = URL(string: "https://speedtest.tokyo2.linode.com/100MB-tokyo.bin") else { return }
         let task = backgroundSession.downloadTask(with: url)
         task.taskDescription = song.id
         songMetaData[song.id] = song
@@ -169,7 +169,6 @@ extension DownloadManager {
         
         if let existingSong = try modelContext.fetch(fetchRequest).first {
             existingSong.isDownloaded = true
-            debugPrint("SAVED PATH:: ", destination.lastPathComponent)
             existingSong.localFileURL = destination.lastPathComponent
             DispatchQueue.main.async {
                 self.saveContext()

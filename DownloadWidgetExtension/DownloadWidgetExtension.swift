@@ -35,7 +35,7 @@ struct DownloadWidgetExtension: Widget {
                     }
                     
                     DynamicIslandExpandedRegion(.trailing) {
-                        Text("\(Int(context.state.progress * 100))%")
+                        Text(context.state.isCompleted ? "Completed" : "\(Int(context.state.progress * 100))%")
                     }
                     
                     DynamicIslandExpandedRegion(.center) {
@@ -44,7 +44,7 @@ struct DownloadWidgetExtension: Widget {
                 } compactLeading: {
                     Text("⬇️")
                 } compactTrailing: {
-                    Text("\(Int(context.state.progress * 100))%")
+                    Text(context.state.isCompleted ? "Completed" : "\(Int(context.state.progress * 100))%")
                 } minimal: {
                     Text("⬇️")
                 }
