@@ -12,13 +12,23 @@ import SDWebImageSwiftUI
 struct SongListView: View {
     @EnvironmentObject private var router: NavigationRoute
     @Environment(\.modelContext) private var modelContext
+    
+    /// - All Songs
     @Query(sort: [.init(\Song.id, order: .reverse)], animation: .smooth) private var songs: [Song]
+    
+    /// - Liked Songs
+    @Query(
+        filter: #Predicate<Song> { $0.isFavorite },
+        sort: [.init(\Song.id,order: .reverse)],
+        animation: .smooth
+    ) private var likedSongs: [Song]
     @StateObject private var downloadManager: DownloadManager = .shared
+    @State private var showLikedSongs: Bool = false
     
     var body: some View {
         List {
             Section {
-                ForEach(songs) { song in
+                ForEach(showLikedSongs ? likedSongs : songs) { song in
                     SongListRow(song: song, downloadDict: $downloadManager.downloadStateDict) { isPause in
                             if isPause {
                                 downloadManager.resumeDownload(for: song)
@@ -45,15 +55,26 @@ struct SongListView: View {
         .navigationTitle("Songs")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Text("Downloads")
-                    .font(.headline)
-                    .bold()
-                    .onTapGesture {
-                        let downloadedSongs = songs.filter { $0.isDownloaded }
-                        router.push(AnyScreen(DownloadedSongList(songs: downloadedSongs)))
-                    }
+                HStack {
+                    Image(systemName: "heart.fill")
+                        .foregroundStyle(showLikedSongs ? .green : .white)
+                        .font(.headline)
+                        .bold()
+                        .onTapGesture {
+                            showLikedSongs.toggle()
+                        }
+                    
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.headline)
+                        .bold()
+                        .onTapGesture {
+                            let downloadedSongs = songs.filter { $0.isDownloaded }
+                            router.push(AnyScreen(DownloadedSongList(songs: downloadedSongs)))
+                        }
+                }
             }
         }
+        .animation(.smooth, value: showLikedSongs)
         .task {
             await fetchSongsFromServer()
         }

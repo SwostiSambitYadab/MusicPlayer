@@ -9,6 +9,12 @@ import SwiftUI
 import SDWebImageSwiftUI
 import SwiftData
 
+public func formatTime(_ time: Double) -> String {
+    let minutes = Int(time) / 60
+    let seconds = Int(time) % 60
+    return String(format: "%d:%02d", minutes, seconds)
+}
+
 struct MusicPlayerView: View {
     @Environment(\.musicPlayerVisibility) private var musicPlayerVisibility
     @Environment(\.modelContext) private var modelContext
@@ -144,10 +150,10 @@ extension MusicPlayerView {
     
     private func LikeButton() -> some View {
         Button {
-            
+            currentSong.isFavorite = !currentSong.isFavorite
         } label: {
             Image(systemName: "heart.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(currentSong.isFavorite ? .green : .white)
                 .font(.system(size: 22))
         }
     }
@@ -184,10 +190,4 @@ extension MusicPlayerView {
         }
         .padding()
     }
-}
-
-public func formatTime(_ time: Double) -> String {
-    let minutes = Int(time) / 60
-    let seconds = Int(time) % 60
-    return String(format: "%d:%02d", minutes, seconds)
 }

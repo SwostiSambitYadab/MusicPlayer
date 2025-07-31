@@ -18,7 +18,8 @@ class Song {
     var duration: Int
     var downloadUrl: String
     var isDownloaded: Bool = false
-    var localFileURL: String = ""
+    @Attribute(originalName: "localFileURL") var filePath: String = ""
+    var isFavorite: Bool = false
     
     init(
         id: String,
@@ -29,7 +30,8 @@ class Song {
         duration: Int,
         downloadUrl: String,
         isDownloaded: Bool = false,
-        localFileUrl: String = ""
+        filePath: String = "",
+        isFavorite: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -39,7 +41,8 @@ class Song {
         self.duration = duration
         self.downloadUrl = downloadUrl
         self.isDownloaded = isDownloaded
-        self.localFileURL = localFileUrl
+        self.filePath = filePath
+        self.isFavorite = isFavorite
     }
     
     static var mock: Song {

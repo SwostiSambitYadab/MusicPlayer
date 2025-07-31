@@ -54,14 +54,15 @@ struct DownloadWidgetExtension: Widget {
 
 extension DownloadWidgetExtension {
     private func DownloadProgressView(_ title: String, progress: Double, isPaused: Bool) -> some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             Text("Downloading")
                 .font(.headline)
                 .foregroundStyle(.white)
-            Spacer(minLength: 4)
+            
             Text(title)
                 .font(.subheadline)
                 .foregroundStyle(.white)
+            
             Spacer(minLength: 4)
             
             if isPaused {

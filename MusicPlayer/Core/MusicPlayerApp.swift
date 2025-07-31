@@ -27,7 +27,7 @@ struct MusicPlayerApp: App {
                         .offset(y: musicPlayerVisibility ? 0 : 300)
                         .transition(.push(from: .bottom))
             }
-            .animation(.easeIn(duration: 0.5), value: musicPlayerVisibility)
+            .animation(.easeIn(duration: 0.25), value: musicPlayerVisibility)
             .environment(\.musicPlayerVisibility, $musicPlayerVisibility)
             .modelContainer(for: Song.self)
             .environmentObject(navigationRoute)
