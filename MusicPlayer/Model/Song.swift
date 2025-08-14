@@ -20,6 +20,7 @@ class Song {
     var isDownloaded: Bool = false
     @Attribute(originalName: "localFileURL") var filePath: String = ""
     var isFavorite: Bool = false
+    var waveform: [Int]
     
     init(
         id: String,
@@ -31,7 +32,8 @@ class Song {
         downloadUrl: String,
         isDownloaded: Bool = false,
         filePath: String = "",
-        isFavorite: Bool = false
+        isFavorite: Bool = false,
+        waveform: [Int] = []
     ) {
         self.id = id
         self.title = title
@@ -43,6 +45,7 @@ class Song {
         self.isDownloaded = isDownloaded
         self.filePath = filePath
         self.isFavorite = isFavorite
+        self.waveform = waveform
     }
     
     static var mock: Song {

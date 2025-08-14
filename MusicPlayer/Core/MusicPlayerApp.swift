@@ -12,6 +12,7 @@ import SwiftData
 struct MusicPlayerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var navigationRoute = NavigationRoute()
+    @StateObject private var networkMonitor = NetworkMonitor()
     @State private var musicPlayerVisibility: Bool = false
     
     var body: some Scene {
@@ -24,19 +25,15 @@ struct MusicPlayerApp: App {
             }
             .overlay(alignment: .bottom) {
                     MusicPlayerMiniView()
-                        .offset(y: musicPlayerVisibility ? 0 : 300)
+                        .offset(y: musicPlayerVisibility ? 20 : 300)
                         .transition(.push(from: .bottom))
             }
             .animation(.easeIn(duration: 0.25), value: musicPlayerVisibility)
             .environment(\.musicPlayerVisibility, $musicPlayerVisibility)
+            .environment(\.isNetworkConnected, networkMonitor.isConnected)
             .modelContainer(for: Song.self)
             .environmentObject(navigationRoute)
             .preferredColorScheme(.dark)
         }
     }
-}
-
-
-extension EnvironmentValues {
-    @Entry var musicPlayerVisibility: Binding<Bool> = .constant(false)
 }

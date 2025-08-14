@@ -33,7 +33,8 @@ struct MusicListResult : Codable {
             audioImageUrl: albumImage ?? "",
             releasedate: releasedate ?? "",
             duration: duration ?? 0,
-            downloadUrl: audiodownload ?? ""
+            downloadUrl: audiodownload ?? "",
+            waveform: parseWaveform(from: waveform ?? "")
         )
     }
 
@@ -56,6 +57,21 @@ struct MusicListResult : Codable {
     let releasedate : String?
     let shareurl : String?
     let shorturl : String?
+    let waveform: String?
+
+    func parseWaveform(from rawString: String) -> [Int] {
+        // Remove extra escaping
+        if let data = rawString.data(using: .utf8) {
+            do {
+                let waveformData = try JSONDecoder().decode(Waveform.self, from: data)
+                return waveformData.peaks ?? []
+            } catch {
+                print("Error decoding waveform: \(error)")
+            }
+        }
+        return []
+    }
+    
 
     enum CodingKeys: String, CodingKey {
         case albumId = "album_id"
@@ -77,6 +93,7 @@ struct MusicListResult : Codable {
         case releasedate = "releasedate"
         case shareurl = "shareurl"
         case shorturl = "shorturl"
+        case waveform = "waveform"
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -99,6 +116,7 @@ struct MusicListResult : Codable {
         releasedate = try values.decodeIfPresent(String.self, forKey: .releasedate)
         shareurl = try values.decodeIfPresent(String.self, forKey: .shareurl)
         shorturl = try values.decodeIfPresent(String.self, forKey: .shorturl)
+        waveform = try values.decodeIfPresent(String.self, forKey: .waveform)
     }
 }
 
@@ -107,6 +125,7 @@ struct MusicListHeader : Codable {
     let errorMessage : String?
     let next : String?
     let resultsCount : Int?
+    let resultsFullCount: Int?
     let status : String?
     let warnings : String?
 
@@ -117,6 +136,7 @@ struct MusicListHeader : Codable {
         case resultsCount = "results_count"
         case status = "status"
         case warnings = "warnings"
+        case resultsFullCount = "results_fullcount"
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -126,6 +146,20 @@ struct MusicListHeader : Codable {
         resultsCount = try values.decodeIfPresent(Int.self, forKey: .resultsCount)
         status = try values.decodeIfPresent(String.self, forKey: .status)
         warnings = try values.decodeIfPresent(String.self, forKey: .warnings)
+        resultsFullCount = try values.decodeIfPresent(Int.self, forKey: .resultsFullCount)
+    }
+}
+
+struct Waveform: Codable {
+    let peaks: [Int]?
+    
+    enum CodingKeys: String, CodingKey {
+        case peaks = "peaks"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        peaks = try values.decodeIfPresent([Int].self, forKey: .peaks)
     }
 }
 

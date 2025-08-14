@@ -12,9 +12,11 @@ import SDWebImageSwiftUI
 struct SongListView: View {
     @EnvironmentObject private var router: NavigationRoute
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("offset") private var offset: Int = 0
+    @AppStorage("totalCount") private var totalCount: Int = 0
     
     /// - All Songs
-    @Query(sort: [.init(\Song.id, order: .reverse)], animation: .smooth) private var songs: [Song]
+    @Query(animation: .smooth) private var songs: [Song]
     
     /// - Liked Songs
     @Query(
@@ -28,27 +30,40 @@ struct SongListView: View {
     var body: some View {
         List {
             Section {
-                ForEach(showLikedSongs ? likedSongs : songs) { song in
-                    SongListRow(song: song, downloadDict: $downloadManager.downloadStateDict) { isPause in
-                            if isPause {
-                                downloadManager.resumeDownload(for: song)
-                            } else {
-                                downloadManager.pauseDownload(for: song.id)
+                let songList = showLikedSongs ? likedSongs : songs
+                if songList.count > 0 {
+                    ForEach(songList) { song in
+                        SongListRow(song: song, downloadDict: $downloadManager.downloadStateDict) { isPause in
+                                if isPause {
+                                    downloadManager.resumeDownload(for: song)
+                                } else {
+                                    downloadManager.pauseDownload(for: song.id)
+                                }
+                            } onTapDownload: {
+                                if !song.isDownloaded {
+                                    downloadManager.injectContext(modelContext)
+                                    downloadManager.startDownload(from: song)
+                                }
                             }
-                        } onTapDownload: {
-                            if !song.isDownloaded {
-                                downloadManager.injectContext(modelContext)
-                                downloadManager.startDownload(from: song)
+                            .onTapGesture {
+                                router.push(AnyScreen(MusicPlayerView(currentSong: song)))
                             }
-                        }
-                        .onTapGesture {
-                            router.push(AnyScreen(MusicPlayerView(currentSong: song)))
-                        }
+                            .onAppear {
+                                loadMore(song: song)
+                            }
+                    }
+                } else {
+                    Text("No Songs Found")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal)
+                        .frame(height: UIScreen.main.bounds.height - 320)
+                        .frame(maxWidth: .infinity)
                 }
             } footer: {
                 // For adding some padding for the mini music player
                 Color.clear
-                    .frame(height: 120)
+                    .frame(height: 100)
             }
         }
         .listStyle(.insetGrouped)
@@ -76,7 +91,9 @@ struct SongListView: View {
         }
         .animation(.smooth, value: showLikedSongs)
         .task {
-            await fetchSongsFromServer()
+            if songs.isEmpty {
+                await fetchSongsFromServer()
+            }
         }
     }
 }
@@ -87,25 +104,35 @@ struct SongListView: View {
 
 extension SongListView {
     func fetchSongsFromServer() async {
-        if songs.isEmpty {
-            if let response = await NetworkService.shared.fetchSongsList(),
-               let musicList = response.results, musicList.count > 0 {
-                debugPrint("RESPONSE", musicList)
-                musicList.forEach {
-                    modelContext.insert($0.convertToSongs())
-                }
-                saveContext()
-            } else {
-                debugPrint("Failed to get music list from SERVER")
+        if let response = await NetworkService.shared.fetchSongsList(offset: offset),
+           let musicCount = response.headers?.resultsFullCount,
+           let musicList = response.results, musicList.count > 0 {
+            debugPrint("Total Count", musicCount)
+            totalCount = musicCount
+            musicList.forEach {
+                modelContext.insert($0.convertToSongs())
             }
+            saveContext()
+        } else {
+            debugPrint("Failed to get music list from SERVER")
         }
     }
     
-    func saveContext() {
+    private func saveContext() {
         do {
             try modelContext.save()
         } catch {
             debugPrint("Unable to save with error:: ", error.localizedDescription)
+        }
+    }
+    
+    private func loadMore(song: Song) {
+        let thresholdItem = songs.last
+        if thresholdItem?.id == song.id, totalCount > offset {
+            offset += min(totalCount - offset, 10)
+            Task {
+                await fetchSongsFromServer()
+            }
         }
     }
 }

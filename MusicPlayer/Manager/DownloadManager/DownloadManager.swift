@@ -135,15 +135,8 @@ extension DownloadManager: URLSessionDownloadDelegate {
             try fileManager.moveItem(at: location, to: destination)
             debugPrint("✅ File Saved to \(destination)")
             
-            // updating completed state of Live Activity
-            let songTitle = songMetaData[downloadTask.taskDescription ?? ""]?.title ?? ""
-            let completedState = DownloadAttributes.ContentState(progress: 1.0, title: songTitle, isCompleted: true)
-            Task {
-                if let activity = activities.first(where: { $0.attributes.songID == downloadTask.taskDescription }) {
-                    await activity.update(ActivityContent(state: completedState, staleDate: nil))
-                    activities.removeAll(where: { $0.attributes.songID == activity.attributes.songID })
-                }
-            }
+            // ending after completed state of Live Activity
+            endLiveActivity(for: downloadTask.taskDescription ?? "")
              
             // update swift Data
             try updateSwiftData(destination: destination, downloadTask: downloadTask)
@@ -229,6 +222,17 @@ extension DownloadManager {
         Task {
             if let activity = activities.first(where: { $0.attributes.songID == songID }) {
                 await activity.update(ActivityContent(state: contentState, staleDate: nil))
+            }
+        }
+    }
+    
+    private func endLiveActivity(for songID: String) {
+        let songTitle = songMetaData[songID]?.title ?? ""
+        let completedState = DownloadAttributes.ContentState(progress: 1.0, title: songTitle, isCompleted: true)
+        Task {
+            if let activity = activities.first(where: { $0.attributes.songID == songID }) {
+                await activity.end(ActivityContent(state: completedState, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(2.0)))
+                activities.removeAll(where: { $0.attributes.songID == activity.attributes.songID })
             }
         }
     }
