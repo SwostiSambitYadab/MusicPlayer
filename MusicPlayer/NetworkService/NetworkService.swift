@@ -17,14 +17,14 @@ final class NetworkService {
         
         guard let baseURL = URL(string: baseURLString) else { return nil }
         let request = URLRequest(url: baseURL)
-        debugPrint("REQUEST", request)
+        debugPrint("REQUEST:\n", request)
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let response = response as? HTTPURLResponse else { return nil }
-            debugPrint("RESPONSE: ", response)
+            debugPrint("RESPONSE:\n", response)
             if response.statusCode < 299 && response.statusCode >= 200 {
                 let jsonString = String(data: data, encoding: .utf8)
-                debugPrint("RESULT\n", jsonString ?? "")
+                debugPrint("RESULT:\n", jsonString ?? "")
                 let decoder = JSONDecoder()
                 let musicListData = try decoder.decode(MusicListModel.self, from: data)
                 return musicListData

@@ -14,10 +14,6 @@ struct DownloadWidgetExtension: Widget {
             for: DownloadAttributes.self) { context in
                 // Lock screen & Dynamic Island Expanded
                 ZStack {
-                    Color.black
-                        .ignoresSafeArea()
-                        .background(.ultraThickMaterial)
-                    
                     if !context.state.isCompleted {
                         DownloadProgressView(
                             context.state.title,
@@ -28,6 +24,7 @@ struct DownloadWidgetExtension: Widget {
                         CompletedSection()
                     }
                 }
+                .activityBackgroundTint(.black)
             } dynamicIsland: { context in
                 DynamicIsland {
                     DynamicIslandExpandedRegion(.leading) {

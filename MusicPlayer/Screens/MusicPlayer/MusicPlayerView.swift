@@ -9,12 +9,6 @@ import SwiftUI
 import SDWebImageSwiftUI
 import SwiftData
 
-public func formatTime(_ time: Double) -> String {
-    let minutes = Int(time) / 60
-    let seconds = Int(time) % 60
-    return String(format: "%d:%02d", minutes, seconds)
-}
-
 struct MusicPlayerView: View {
     @Environment(\.isNetworkConnected) private var isNetworkConnected
     @Environment(\.musicPlayerVisibility) private var musicPlayerVisibility

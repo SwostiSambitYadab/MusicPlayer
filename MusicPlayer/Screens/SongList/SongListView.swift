@@ -18,47 +18,35 @@ struct SongListView: View {
     /// - All Songs
     @Query(animation: .smooth) private var songs: [Song]
     
-    /// - Liked Songs
-    @Query(
-        filter: #Predicate<Song> { $0.isFavorite },
-        sort: [.init(\Song.id,order: .reverse)],
-        animation: .smooth
-    ) private var likedSongs: [Song]
     @StateObject private var downloadManager: DownloadManager = .shared
     @State private var showLikedSongs: Bool = false
+    @State private var loadingState: LoadingState<[Song]> = .loading
+    let mockData = (0..<10).map {_ in Song.mock }
     
     var body: some View {
         List {
             Section {
-                let songList = showLikedSongs ? likedSongs : songs
-                if songList.count > 0 {
+                LoadingStateView(state: loadingState, mockData: mockData) { songList in
                     ForEach(songList) { song in
                         SongListRow(song: song, downloadDict: $downloadManager.downloadStateDict) { isPause in
-                                if isPause {
-                                    downloadManager.resumeDownload(for: song)
-                                } else {
-                                    downloadManager.pauseDownload(for: song.id)
-                                }
-                            } onTapDownload: {
-                                if !song.isDownloaded {
-                                    downloadManager.injectContext(modelContext)
-                                    downloadManager.startDownload(from: song)
-                                }
+                            if isPause {
+                                downloadManager.resumeDownload(for: song)
+                            } else {
+                                downloadManager.pauseDownload(for: song.id)
                             }
-                            .onTapGesture {
-                                router.push(AnyScreen(MusicPlayerView(currentSong: song)))
+                        } onTapDownload: {
+                            if !song.isDownloaded {
+                                downloadManager.injectContext(modelContext)
+                                downloadManager.startDownload(from: song)
                             }
-                            .onAppear {
-                                loadMore(song: song)
-                            }
+                        }
+                        .onTapGesture {
+                            router.push(AnyScreen(MusicPlayerView(currentSong: song)))
+                        }
+                        .onAppear {
+                            loadMore(song: song)
+                        }
                     }
-                } else {
-                    Text("No Songs Found")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .padding(.horizontal)
-                        .frame(height: UIScreen.main.bounds.height - 320)
-                        .frame(maxWidth: .infinity)
                 }
             } footer: {
                 // For adding some padding for the mini music player
@@ -90,9 +78,16 @@ struct SongListView: View {
             }
         }
         .animation(.smooth, value: showLikedSongs)
+        .onChange(of: showLikedSongs) { oldValue, newValue in
+            let songList = newValue ? songs.filter { $0.isFavorite } : songs
+            loadingState = .loading
+            loadingState = songList.count > 0 ? .success(songList) : .failure("No Songs Found")
+        }
         .task {
             if songs.isEmpty {
                 await fetchSongsFromServer()
+            } else {
+                loadingState = .success(songs)
             }
         }
     }
@@ -104,6 +99,7 @@ struct SongListView: View {
 
 extension SongListView {
     func fetchSongsFromServer() async {
+        loadingState = .loading
         if let response = await NetworkService.shared.fetchSongsList(offset: offset),
            let musicCount = response.headers?.resultsFullCount,
            let musicList = response.results, musicList.count > 0 {
@@ -113,8 +109,10 @@ extension SongListView {
                 modelContext.insert($0.convertToSongs())
             }
             saveContext()
+            loadingState = .success(songs)
         } else {
             debugPrint("Failed to get music list from SERVER")
+            loadingState = .failure("No Songs Found")
         }
     }
     

@@ -7,11 +7,25 @@
 
 import SwiftUI
 
-enum LoadingState<T> {
-    case idle
+enum LoadingState<T>: Equatable {
     case loading
     case success(T)
-    case Failure(String)
+    case failure(String)
+    
+    var id: Int {
+        switch self {
+        case .loading:
+            return 0
+        case .success:
+            return 1
+        case .failure:
+            return 2
+        }
+    }
+    
+    static func == (lhs: LoadingState<T>, rhs: LoadingState<T>) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 struct LoadingStateView<Content: View, T>: View {
@@ -21,8 +35,6 @@ struct LoadingStateView<Content: View, T>: View {
     
     var body: some View {
         switch state {
-        case .idle:
-            EmptyView()
         case .loading:
             content(mockData)
                 .redacted(reason: .placeholder)
@@ -30,7 +42,7 @@ struct LoadingStateView<Content: View, T>: View {
                 .allowsHitTesting(false)
         case .success(let response):
             content(response)
-        case .Failure(let errorMessage):
+        case .failure(let errorMessage):
             Text(errorMessage)
                 .font(.headline)
                 .foregroundStyle(.primary)
