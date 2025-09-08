@@ -9,6 +9,7 @@ import Foundation
 import AVKit
 import MediaPlayer
 import Combine
+import WidgetKit
 
 class MusicPlayerManager: ObservableObject {
     
@@ -18,6 +19,7 @@ class MusicPlayerManager: ObservableObject {
     private var player: AVPlayer?
     private var timerObservationToken: Any?
     private var artworkImage: MPMediaItemArtwork?
+    private var artworkImageForSaving: UIImage?
     var currentSong: Song?
     
     @Published var isPlaying = false
@@ -243,6 +245,7 @@ extension MusicPlayerManager {
             }
             
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+            updateWidget()
         }
     }
     
@@ -255,6 +258,7 @@ extension MusicPlayerManager {
             }
             let (data, _) = try await URLSession.shared.data(for: URLRequest(url: url))
             if let image = UIImage(data: data) {
+                artworkImageForSaving = image
                 let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
                 return artwork
             }
@@ -263,5 +267,41 @@ extension MusicPlayerManager {
             return nil
         }
         return nil
+    }
+}
+
+/// - For updating Widget and storing shared state
+extension MusicPlayerManager {
+    private func updateWidget() {
+        let filename = currentArtworkFilename(forSongID: currentSong?.id)
+          if let filename, let image = artworkImageForSaving {
+              saveArtworkToSharedContainerIfNeeded(image, fileName: filename)
+          }
+        
+        let state = SharedPlaybackState(
+                    id: currentSong?.id,
+                    title: currentSong?.title,
+                    isPlaying: isPlaying,
+                    currentTime: player?.currentTime().seconds ?? currentTime,
+                    duration: currentSong?.duration ?? 0,
+                    artworkFilename: filename,
+                    updatedAt: Date()
+                )
+        WidgetDefaultManager.setSharedPlaybackState(state: state)
+        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+    }
+    
+    private func saveArtworkToSharedContainerIfNeeded(_ image: UIImage?, fileName: String) {
+        guard let image, let container = WidgetDefaultManager.shared.sharedContainerURL() else { return }
+        let artURL = container.appendingPathComponent(fileName)
+        // write as jpeg
+        if let data = image.jpegData(compressionQuality: 0.8) {
+            try? data.write(to: artURL, options: .atomic)
+        }
+    }
+
+    private func currentArtworkFilename(forSongID id: String?) -> String? {
+        guard let id else { return nil }
+        return "artwork_\(id).jpg"
     }
 }
