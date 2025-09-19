@@ -10,6 +10,7 @@ import SwiftData
 
 struct DownloadedSongList: View {
     @EnvironmentObject private var router: NavigationRoute
+    @Environment(\.musicPlayerVisibility) private var isMiniPlayerVisible
     let songs: [Song]
     
     var body: some View {
@@ -22,8 +23,10 @@ struct DownloadedSongList: View {
                     }
                 }
             } footer: {
-                Color.clear
-                    .frame(height: 120)
+                if isMiniPlayerVisible.wrappedValue {
+                    Color.clear
+                        .frame(height: 100)
+                }
             }
         }
         .listStyle(.insetGrouped)

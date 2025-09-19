@@ -216,7 +216,7 @@ extension MusicPlayerView {
         musicPlayerManager.musicProgress = dragProgress
         
         // Also update currentTime preview while dragging
-        musicPlayerManager.currentTime = dragProgress * musicPlayerManager.duration
+        musicPlayerManager.seek(to: dragProgress * musicPlayerManager.duration)
     }
     
     private func onEndGesture(_ gesture: DragGesture.Value) {

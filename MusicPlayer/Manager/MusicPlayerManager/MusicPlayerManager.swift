@@ -223,9 +223,17 @@ extension MusicPlayerManager {
     }
     
     func resume() {
-        player?.play()
-        isPlaying = true
-        updateNowPlayingInfo()
+        if player == nil {
+            guard let currentSong else {
+                debugPrint("Could not found the Song to be played")
+                return
+            }
+            playStream(currSong: currentSong)
+        } else {
+            player?.play()
+            isPlaying = true
+            updateNowPlayingInfo()
+        }
     }
     
     /// - Updating the playingInfo in Notification Center

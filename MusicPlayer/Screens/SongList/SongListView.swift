@@ -12,6 +12,9 @@ import SDWebImageSwiftUI
 struct SongListView: View {
     @EnvironmentObject private var router: NavigationRoute
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.musicPlayerVisibility) private var isMiniPlayerVisible
+    
+    /// - For Pagination
     @AppStorage("offset") private var offset: Int = 0
     @AppStorage("totalCount") private var totalCount: Int = 0
     
@@ -21,7 +24,7 @@ struct SongListView: View {
     @StateObject private var downloadManager: DownloadManager = .shared
     @State private var showLikedSongs: Bool = false
     @State private var loadingState: LoadingState<[Song]> = .loading
-    let mockData = (0..<10).map {_ in Song.mock }
+    private let mockData = (0..<10).map {_ in Song.mock }
     
     var body: some View {
         List {
@@ -50,44 +53,28 @@ struct SongListView: View {
                 }
             } footer: {
                 // For adding some padding for the mini music player
-                Color.clear
-                    .frame(height: 100)
+                if isMiniPlayerVisible.wrappedValue {
+                    Color.clear
+                        .frame(height: 100)
+                }
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Songs")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack {
-                    Image(systemName: "heart.fill")
-                        .foregroundStyle(showLikedSongs ? .green : .white)
-                        .font(.headline)
-                        .bold()
-                        .onTapGesture {
-                            showLikedSongs.toggle()
-                        }
-                    
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.headline)
-                        .bold()
-                        .onTapGesture {
-                            let downloadedSongs = songs.filter { $0.isDownloaded }
-                            router.push(AnyScreen(DownloadedSongList(songs: downloadedSongs)))
-                        }
-                }
+                ToolBarButtons()
             }
         }
         .animation(.smooth, value: showLikedSongs)
-        .onChange(of: showLikedSongs) { oldValue, newValue in
-            let songList = newValue ? songs.filter { $0.isFavorite } : songs
-            loadingState = .loading
-            loadingState = songList.count > 0 ? .success(songList) : .failure("No Songs Found")
+        .onChange(of: showLikedSongs) { _, _ in
+            displaySongList()
         }
         .task {
             if songs.isEmpty {
                 await fetchSongsFromServer()
             } else {
-                loadingState = .success(songs)
+                displaySongList()
             }
         }
     }
@@ -97,8 +84,9 @@ struct SongListView: View {
     SongListView()
 }
 
+// MARK: WebService Calls & Helper Methods
 extension SongListView {
-    func fetchSongsFromServer() async {
+    private func fetchSongsFromServer() async {
         loadingState = .loading
         if let response = await NetworkService.shared.fetchSongsList(offset: offset),
            let musicCount = response.headers?.resultsFullCount,
@@ -131,6 +119,35 @@ extension SongListView {
             Task {
                 await fetchSongsFromServer()
             }
+        }
+    }
+    
+    private func displaySongList() {
+        let songList = showLikedSongs ? songs.filter { $0.isFavorite } : songs
+        loadingState = .loading
+        loadingState = songList.count > 0 ? .success(songList) : .failure("No Songs Found")
+    }
+}
+
+// MARK: View Components
+extension SongListView {
+    func ToolBarButtons() -> some View {
+        HStack {
+            Image(systemName: "heart.fill")
+                .foregroundStyle(showLikedSongs ? .green : .white)
+                .font(.headline)
+                .bold()
+                .onTapGesture {
+                    showLikedSongs.toggle()
+                }
+            
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.headline)
+                .bold()
+                .onTapGesture {
+                    let downloadedSongs = songs.filter { $0.isDownloaded }
+                    router.push(AnyScreen(DownloadedSongList(songs: downloadedSongs)))
+                }
         }
     }
 }
