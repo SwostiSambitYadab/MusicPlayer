@@ -29,7 +29,6 @@ struct WaveformView: View {
                 }
                 .stroke(.gray.opacity(0.4), lineWidth: barWidth * 0.95)
                 
-                
                 // Played
                 Path { path in
                     for index in 0..<playedCount {

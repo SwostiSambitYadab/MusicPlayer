@@ -72,7 +72,6 @@ extension SongListRow {
         }
     }
     
-    
     private func ResumePauseDownloadSection(progress: Progress) -> some View {
         Group {
             if progress.isPause {

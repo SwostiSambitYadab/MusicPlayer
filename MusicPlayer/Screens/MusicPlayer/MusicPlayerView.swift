@@ -29,26 +29,7 @@ struct MusicPlayerView: View {
             if isNetworkConnected == true || currentSong.isDownloaded {
                 MusicPlayerContent()
             } else {
-                VStack {
-                    Text("It seems you are not connected to internet, you can still listen downloaded songs")
-                        .multilineTextAlignment(.center)
-                        .font(.headline)
-                        .bold()
-                    
-                    Button {
-                        fetchDownloadedMusicAndRedirect()
-                    } label: {
-                        Text("Go to Downloads")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical)
-                            .background(.green, in: .rect(cornerRadius: 12))
-                    }
-                }
-                .padding(.horizontal)
-                .offset(y: 200)
+                NoInternetView()
             }
         }
         .animation(.smooth, value: musicPlayerManager.musicProgress)
@@ -69,8 +50,8 @@ struct MusicPlayerView: View {
     }
 }
 
+// MARK: - View builders
 extension MusicPlayerView {
-    
     private func BackgroundImageLayer() -> some View {
         VStack {
             WebImage(url: URL(string: currentSong.audioImageUrl)) { image in
@@ -202,6 +183,32 @@ extension MusicPlayerView {
         .padding(.top, 32)
     }
     
+    private func NoInternetView() -> some View {
+        VStack {
+            Text("It seems you are not connected to internet, you can still listen downloaded songs")
+                .multilineTextAlignment(.center)
+                .font(.headline)
+                .bold()
+            
+            Button {
+                fetchDownloadedMusicAndRedirect()
+            } label: {
+                Text("Go to Downloads")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical)
+                    .background(.green, in: .rect(cornerRadius: 12))
+            }
+        }
+        .padding(.horizontal)
+        .offset(y: 200)
+    }
+}
+
+// MARK: - Helper methods
+extension MusicPlayerView {
     private func normalize(peaks: [Int], maxHeight: CGFloat) -> [CGFloat] {
         guard let maxPeak = peaks.max(), maxPeak > 0 else { return [] }
         return peaks.map { CGFloat($0) / CGFloat(maxPeak) * maxHeight }

@@ -26,7 +26,7 @@ struct MusicListModel : Codable {
 struct MusicListResult : Codable {
     
     func convertToSongs() -> Song {
-        .init(
+        Song(
             id: id ?? UUID().uuidString,
             title: name ?? "",
             audioUrl: audio ?? "",
@@ -71,7 +71,6 @@ struct MusicListResult : Codable {
         }
         return []
     }
-    
 
     enum CodingKeys: String, CodingKey {
         case albumId = "album_id"

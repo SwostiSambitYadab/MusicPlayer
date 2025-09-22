@@ -72,7 +72,7 @@ struct MusicWidgetEntryView: View {
 
 struct MusicWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: widgetKind, provider: MusicProvider(), content: { entry in
+        AppIntentConfiguration(kind: WidgetConstant.kind, provider: MusicProvider(), content: { entry in
             MusicWidgetEntryView(entry: entry)
         })
         .configurationDisplayName("Music")

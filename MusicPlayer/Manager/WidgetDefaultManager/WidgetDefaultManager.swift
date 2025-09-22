@@ -7,8 +7,14 @@
 
 import Foundation
 
-let appGroupID = "group.com.blelearning.app.widget"
-let widgetKind = "MusicWidget"
+enum WidgetConstant {
+    static let appGroupID = "group.com.blelearning.app.widget"
+    static let kind = "MusicWidget"
+}
+
+enum WidgetKeys {
+    static let sharedPlaybackState = "shared_playback_state"
+}
 
 struct SharedPlaybackState: Codable {
     let id: String?
@@ -20,15 +26,11 @@ struct SharedPlaybackState: Codable {
     let updatedAt: Date
 }
 
-struct WidgetKeys {
-    static let sharedPlaybackState = "shared_playback_state"
-}
-
 struct WidgetDefaultManager {
     static let shared = WidgetDefaultManager()
     private init() {}
     
-    static let widgetDefaults = UserDefaults(suiteName: appGroupID)
+    static let widgetDefaults = UserDefaults(suiteName: WidgetConstant.appGroupID)
  
     static func setSharedPlaybackState(state: SharedPlaybackState) {
         let encoder = JSONEncoder()
@@ -51,11 +53,11 @@ struct WidgetDefaultManager {
     }
     
     func sharedContainerURL() -> URL? {
-        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetConstant.appGroupID)
     }
     
     func getArtworkImageData(from filename: String) -> Data? {
-        if let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) {
+        if let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetConstant.appGroupID) {
             let url = container.appendingPathComponent(filename, conformingTo: .image)
             if let data = try? Data(contentsOf: url) {
                 return data

@@ -8,9 +8,10 @@
 import Foundation
 import Network
 
-class NetworkMonitor: ObservableObject {
-    @Published var isConnected: Bool?
-    @Published var connectionType: NWInterface.InterfaceType?
+@Observable
+class NetworkMonitor {
+    var isConnected: Bool?
+    var connectionType: NWInterface.InterfaceType?
     
     init() {
         startMonitoring()

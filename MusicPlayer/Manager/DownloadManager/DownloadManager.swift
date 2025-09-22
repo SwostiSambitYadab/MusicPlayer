@@ -9,7 +9,6 @@ import Foundation
 import SwiftData
 import ActivityKit
 
-
 struct Progress {
     let value: Double
     var isPause: Bool

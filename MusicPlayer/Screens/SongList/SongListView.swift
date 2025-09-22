@@ -22,8 +22,15 @@ struct SongListView: View {
     @Query(animation: .smooth) private var songs: [Song]
     
     @StateObject private var downloadManager: DownloadManager = .shared
+    @StateObject private var moodVM: MoodSongRecommender = .shared
+    
     @State private var showLikedSongs: Bool = false
     @State private var loadingState: LoadingState<[Song]> = .loading
+    
+    // Mood selection
+    @State private var selectedMood: String = "All"
+    private let moods: [String] = ["All", "Happy", "Sad", "Angry", "Calm", "Focus"]
+    
     private let mockData = (0..<10).map {_ in Song.mock }
     
     var body: some View {
@@ -47,7 +54,7 @@ struct SongListView: View {
                             router.push(AnyScreen(MusicPlayerView(currentSong: song)))
                         }
                         .onAppear {
-                            loadMore(song: song)
+                            loadMoreIfNeeded(for: song)
                         }
                     }
                 }
@@ -65,16 +72,26 @@ struct SongListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 ToolBarButtons()
             }
+            ToolbarItem(placement: .topBarLeading) {
+                MoodMenu()
+            }
         }
         .animation(.smooth, value: showLikedSongs)
+        .animation(.smooth, value: selectedMood)
         .onChange(of: showLikedSongs) { _, _ in
-            displaySongList()
+            refreshForCurrentFilters()
+        }
+        .onChange(of: selectedMood) { _, newValue in
+            handleMoodChange(newValue)
         }
         .task {
+            // inject context for mood fetches
+            moodVM.injectContext(modelContext)
+            
             if songs.isEmpty {
                 await fetchSongsFromServer()
             } else {
-                displaySongList()
+                refreshForCurrentFilters()
             }
         }
     }
@@ -87,6 +104,12 @@ struct SongListView: View {
 // MARK: WebService Calls & Helper Methods
 extension SongListView {
     private func fetchSongsFromServer() async {
+        // Only fetch from server when not filtering by mood
+        guard selectedMood == "All" else {
+            await fetchSongsForMoodIfNeeded()
+            return
+        }
+        
         loadingState = .loading
         if let response = await NetworkService.shared.fetchSongsList(offset: offset),
            let musicCount = response.headers?.resultsFullCount,
@@ -97,7 +120,7 @@ extension SongListView {
                 modelContext.insert($0.convertToSongs())
             }
             saveContext()
-            loadingState = .success(songs)
+            displaySongList()
         } else {
             debugPrint("Failed to get music list from SERVER")
             loadingState = .failure("No Songs Found")
@@ -112,7 +135,9 @@ extension SongListView {
         }
     }
     
-    private func loadMore(song: Song) {
+    private func loadMoreIfNeeded(for song: Song) {
+        // Do not paginate when a mood filter is active
+        guard selectedMood == "All" else { return }
         let thresholdItem = songs.last
         if thresholdItem?.id == song.id, totalCount > offset {
             offset += min(totalCount - offset, 10)
@@ -123,9 +148,60 @@ extension SongListView {
     }
     
     private func displaySongList() {
-        let songList = showLikedSongs ? songs.filter { $0.isFavorite } : songs
+        // Base list depends on mood selection
+        let baseList: [Song]
+        if selectedMood == "All" {
+            baseList = songs
+        } else {
+            switch moodVM.loadingState {
+            case .success(let moodSongs):
+                baseList = moodSongs
+            case .failure(let message):
+                loadingState = .failure(message)
+                return
+            case .loading:
+                loadingState = .loading
+                return
+            }
+        }
+        
+        // Apply liked filter if needed
         loadingState = .loading
-        loadingState = songList.count > 0 ? .success(songList) : .failure("No Songs Found")
+        let filtered = showLikedSongs ? baseList.filter { $0.isFavorite } : baseList
+        loadingState = filtered.isEmpty ? .failure("No Songs Found") : .success(filtered)
+    }
+    
+    private func refreshForCurrentFilters() {
+        if selectedMood == "All" {
+            // Use local songs and liked filter
+            displaySongList()
+        } else {
+            Task {
+                await fetchSongsForMoodIfNeeded()
+                displaySongList()
+            }
+        }
+    }
+    
+    private func fetchSongsForMoodIfNeeded() async {
+        // If mood is not "All", run a local fetch via SongsViaMood
+        guard selectedMood != "All" else { return }
+        await moodVM.fetchData(for: selectedMood)
+    }
+    
+    private func handleMoodChange(_ mood: String) {
+        // Reset pagination when switching away from "All"
+        if mood != "All" {
+            // Stop pagination-driven loading
+            loadingState = .loading
+            Task {
+                await fetchSongsForMoodIfNeeded()
+                displaySongList()
+            }
+        } else {
+            // Back to "All" — show local + pagination
+            displaySongList()
+        }
     }
 }
 
@@ -150,4 +226,21 @@ extension SongListView {
                 }
         }
     }
+    
+    private func MoodMenu() -> some View {
+        Menu {
+            Picker("Mood", selection: $selectedMood) {
+                ForEach(moods, id: \.self) { mood in
+                    Text(mood).tag(mood)
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                Text(selectedMood)
+            }
+            .font(.headline)
+        }
+    }
 }
+

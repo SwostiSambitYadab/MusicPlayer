@@ -21,7 +21,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        print("🌙 Resuming: \(identifier)")
+        print("Resuming: \(identifier)")
         DownloadManager.shared.backgroundCompletionHandler = completionHandler
     }
     

@@ -12,7 +12,7 @@ import SwiftData
 struct MusicPlayerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var navigationRoute = NavigationRoute()
-    @StateObject private var networkMonitor = NetworkMonitor()
+    @State private var networkMonitor = NetworkMonitor()
     @State private var musicPlayerVisibility: Bool = false
     
     var body: some Scene {

@@ -30,7 +30,16 @@ class MusicPlayerManager: ObservableObject {
     private init() {
         setupRemoteTransportControls()
         setupAudioSession()
-        
+        addCurrTimeObserver()
+    }
+    
+    deinit {
+        cancellables = []
+        timerObservationToken = nil
+        NotificationCenter.default.removeObserver(self, name: AVPlayerItem.didPlayToEndTimeNotification, object: nil)
+    }
+    
+    private func addCurrTimeObserver() {
         $currentTime
             .receive(on: RunLoop.main)
             .sink { [weak self] value in
@@ -42,12 +51,6 @@ class MusicPlayerManager: ObservableObject {
                 musicProgress = CGFloat(currentTime / duration)
             }
             .store(in: &cancellables)
-    }
-    
-    deinit {
-        cancellables = []
-        timerObservationToken = nil
-        NotificationCenter.default.removeObserver(self, name: AVPlayerItem.didPlayToEndTimeNotification, object: nil)
     }
     
     private func setupAudioSession() {
@@ -184,7 +187,7 @@ extension MusicPlayerManager {
                 print("✅ Local file exists at: \(currSong.filePath)")
             } else {
                 print("❌ Local file does not exist at: \(currSong.filePath)")
-                /// Fallback play from online url instead
+                // Fallback play from online url instead
                 fileURL = URL(string: currSong.audioUrl)
             }
         }
@@ -207,7 +210,6 @@ extension MusicPlayerManager {
         }
         updateNowPlayingInfo()
     }
-    
     
     func checkIfSameMusicIsPlaying(_ song: Song) {
         if player == nil || currentSong?.id != song.id {
@@ -296,7 +298,7 @@ extension MusicPlayerManager {
                     updatedAt: Date()
                 )
         WidgetDefaultManager.setSharedPlaybackState(state: state)
-        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: WidgetConstant.kind)
     }
     
     private func saveArtworkToSharedContainerIfNeeded(_ image: UIImage?, fileName: String) {
