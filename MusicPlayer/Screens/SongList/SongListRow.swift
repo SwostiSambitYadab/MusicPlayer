@@ -11,7 +11,7 @@ import SDWebImageSwiftUI
 struct SongListRow: View {
     
     let song: Song
-    @Binding var downloadDict: [String: DownladState]
+    @Binding var downloadDict: [String: DownloadState]
     var onTapPauseResume: ((_ isPause: Bool) -> Void)? = nil
     var onTapDownload: (() -> Void)? = nil
     
@@ -59,16 +59,18 @@ extension SongListRow {
                 .onTapGesture {
                     onTapDownload?()
                 }
-        case .started:
-            ResumePauseDownloadSection(progress: Progress(value: 0, isPause: false))
+        case .inProgress, .paused:
+            if let progressValue = downloadState.progressValue {
+                ResumePauseDownloadSection(
+                    progress: Progress(
+                        value: progressValue,
+                        isPause: downloadState.isPaused
+                    )
+                )
                 .onTapGesture {
                     onTapPauseResume?(true)
                 }
-        case .paused(let v), .inProgress(let v):
-            ResumePauseDownloadSection(progress: Progress(value: v, isPause: downloadState.isPaused))
-                .onTapGesture {
-                    onTapPauseResume?(downloadState.isPaused)
-                }
+            }
         }
     }
     

@@ -13,9 +13,9 @@ struct MusicPlayerView: View {
     @Environment(\.isNetworkConnected) private var isNetworkConnected
     @Environment(\.musicPlayerVisibility) private var musicPlayerVisibility
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var router: NavigationRoute
+    @Environment(NavigationRoute.self) private var router
     @StateObject private var musicPlayerManager: MusicPlayerManager = .shared
-    @StateObject private var downloadManager: DownloadManager = .shared
+    @State private var downloadManager: DownloadManager = .shared
     let currentSong: Song
     
     private var normalizePeaks: [CGFloat] {
@@ -85,14 +85,12 @@ extension MusicPlayerView {
                 switch downloadState {
                 case .idle, .completed:
                     DownloadButton()
-                case .started:
-                    ResumePauseDownloadSection(
-                        progress: Progress(value: 0, isPause: false)
-                    )
-                case .paused(let v), .inProgress(let v):
-                    ResumePauseDownloadSection(
-                        progress: Progress(value: v, isPause: downloadState.isPaused)
-                    )
+                case .inProgress, .paused:
+                    if let progressValue = downloadState.progressValue {
+                        ResumePauseDownloadSection(
+                            progress: Progress(value: progressValue, isPause: downloadState.isPaused)
+                        )
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

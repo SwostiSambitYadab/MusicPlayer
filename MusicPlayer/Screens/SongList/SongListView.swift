@@ -10,7 +10,7 @@ import SwiftData
 import SDWebImageSwiftUI
 
 struct SongListView: View {
-    @EnvironmentObject private var router: NavigationRoute
+    @Environment(NavigationRoute.self) private var router
     @Environment(\.modelContext) private var modelContext
     @Environment(\.musicPlayerVisibility) private var isMiniPlayerVisible
     
@@ -21,7 +21,7 @@ struct SongListView: View {
     /// - All Songs
     @Query(animation: .smooth) private var songs: [Song]
     
-    @StateObject private var downloadManager: DownloadManager = .shared
+    @State private var downloadManager: DownloadManager = .shared
     @StateObject private var moodVM: MoodSongRecommender = .shared
     
     @State private var showLikedSongs: Bool = false
@@ -243,4 +243,3 @@ extension SongListView {
         }
     }
 }
-

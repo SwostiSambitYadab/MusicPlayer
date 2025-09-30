@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct DownloadedSongList: View {
-    @EnvironmentObject private var router: NavigationRoute
+    @Environment(NavigationRoute.self) private var router
     @Environment(\.musicPlayerVisibility) private var isMiniPlayerVisible
     let songs: [Song]
     

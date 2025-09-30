@@ -11,8 +11,8 @@ import Network
 
 extension EnvironmentValues {
     @Entry var musicPlayerVisibility: Binding<Bool> = .constant(false)
-    @Entry var isNetworkConnected: Bool?
-    @Entry var connectionType: NWInterface.InterfaceType?
+    @Entry var isNetworkConnected: Bool? = nil
+    @Entry var connectionType: NWInterface.InterfaceType? = nil
 }
 
 public func formatTime(_ time: Double) -> String {

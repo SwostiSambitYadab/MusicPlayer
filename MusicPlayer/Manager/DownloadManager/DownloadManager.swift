@@ -8,43 +8,53 @@
 import Foundation
 import SwiftData
 import ActivityKit
+import Observation
 
 struct Progress {
     let value: Double
     var isPause: Bool
 }
 
-enum DownladState {
+enum DownloadState {
     case idle
-    case started
     case paused(Double)
     case inProgress(Double)
     case completed
     
+    var progressValue: Double? {
+        switch self {
+        case .paused(let v), .inProgress(let v):
+            return v
+        default:
+            return nil
+        }
+    }
+    
     var isPaused: Bool {
-        if case .paused(_) = self { return true }
+        if case .paused = self { return true }
         return false
     }
 }
 
-class DownloadManager: NSObject, ObservableObject {
+@Observable
+class DownloadManager: NSObject {
     static let shared = DownloadManager()
-    private var backgroundSession: URLSession!
-    private var modelContext: ModelContext?
+    @ObservationIgnored private var backgroundSession: URLSession!
+    @ObservationIgnored private var modelContext: ModelContext?
     
     /// - Progress Dict to show download progress
-    private var progressDict: [String: Double] = [:]
-    @Published var downloadStateDict: [String: DownladState] = [:]
+    @ObservationIgnored private var progressDict: [String: Double] = [:]
+    var downloadStateDict: [String: DownloadState] = [:]
     
     /// - For Live Activity
-    private var activities: [Activity<DownloadAttributes>] = []
-    private var songMetaData: [String: Song] = [:]
+    @ObservationIgnored private var activities: [Activity<DownloadAttributes>] = []
+    @ObservationIgnored private var songMetaData: [String: Song] = [:]
     
     /// - To Pause/Resume Download Tasks
-    private var activeDownloads: [String: URLSessionDownloadTask] = [:]
-    private var resumeDataDict: [String: Data] = [:]
+    @ObservationIgnored private var activeDownloads: [String: URLSessionDownloadTask] = [:]
+    @ObservationIgnored private var resumeDataDict: [String: Data] = [:]
     
-    var backgroundCompletionHandler: (() -> Void)?
+    @ObservationIgnored var backgroundCompletionHandler: (() -> Void)?
     
     private override init() {
         super.init()
@@ -69,7 +79,7 @@ class DownloadManager: NSObject, ObservableObject {
         task.taskDescription = song.id
         songMetaData[song.id] = song
         activeDownloads[song.id] = task
-        downloadStateDict[song.id] = .started
+        downloadStateDict[song.id] = .inProgress(0)
         task.resume()
         
         // start Live Activity
@@ -104,7 +114,7 @@ class DownloadManager: NSObject, ObservableObject {
         guard let resumeData = resumeDataDict[song.id] else {
             // Fallback if not found any resumeData
             startDownload(from: song)
-            downloadStateDict[song.id] = .started
+            downloadStateDict[song.id] = .inProgress(0)
             return
         }
         let task = backgroundSession.downloadTask(withResumeData: resumeData)

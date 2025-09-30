@@ -29,10 +29,10 @@ struct AnyScreen: Hashable {
     }
 }
 
-
-final class NavigationRoute: ObservableObject {
-    @Published var path: NavigationPath = .init()
-    @Published private var stacks: [AnyScreen] = []
+@Observable
+final class NavigationRoute {
+    var path: NavigationPath = .init()
+    private var stacks: [AnyScreen] = []
     
     func push(_ screen: AnyScreen) {
         path.append(screen)
@@ -48,7 +48,11 @@ final class NavigationRoute: ObservableObject {
     
     func popBack(to screen: AnyScreen) {
         if let index = stacks.firstIndex(where: { $0 == screen }) {
-            path.removeLast(path.count - (index + 1))
+            let removeCount = path.count - (index + 1)
+            if removeCount > 0 {
+                path.removeLast(removeCount)
+                stacks.removeLast(removeCount)
+            }
         }
     }
     

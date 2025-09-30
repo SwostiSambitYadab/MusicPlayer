@@ -11,7 +11,7 @@ import SDWebImageSwiftUI
 struct MusicPlayerMiniView: View {
     @StateObject private var vm: MusicPlayerManager = .shared
     @Environment(\.musicPlayerVisibility) private var visibility
-    @EnvironmentObject private var router: NavigationRoute
+    @Environment(NavigationRoute.self) private var router
     
     var body: some View {
         HStack {
