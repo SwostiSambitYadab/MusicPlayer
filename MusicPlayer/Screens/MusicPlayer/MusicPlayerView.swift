@@ -14,7 +14,8 @@ struct MusicPlayerView: View {
     @Environment(\.musicPlayerVisibility) private var musicPlayerVisibility
     @Environment(\.modelContext) private var modelContext
     @Environment(NavigationRoute.self) private var router
-    @StateObject private var musicPlayerManager: MusicPlayerManager = .shared
+    
+    @State private var musicPlayerManager: MusicPlayerManager = .shared
     @State private var downloadManager: DownloadManager = .shared
     let currentSong: Song
     

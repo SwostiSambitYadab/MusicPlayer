@@ -11,9 +11,9 @@ import MediaPlayer
 import Combine
 import WidgetKit
 
-class MusicPlayerManager: ObservableObject {
+@Observable
+final class MusicPlayerManager {
     
-    private var cancellables = Set<AnyCancellable>()
     static let shared = MusicPlayerManager()
     
     private var player: AVPlayer?
@@ -22,35 +22,28 @@ class MusicPlayerManager: ObservableObject {
     private var artworkImageForSaving: UIImage?
     var currentSong: Song?
     
-    @Published var isPlaying = false
-    @Published var currentTime: Double = 0
-    @Published var duration: Double = 0
-    @Published var musicProgress: CGFloat = 0
+    var isPlaying = false
+    var duration: Double = 0
+    var musicProgress: CGFloat = 0
+    
+    var currentTime: Double = 0 {
+        didSet {
+            guard duration > 0 else {
+                musicProgress = 0
+                return
+            }
+            musicProgress = CGFloat(currentTime / duration)
+        }
+    }
     
     private init() {
         setupRemoteTransportControls()
         setupAudioSession()
-        addCurrTimeObserver()
     }
     
     deinit {
-        cancellables = []
         timerObservationToken = nil
         NotificationCenter.default.removeObserver(self, name: AVPlayerItem.didPlayToEndTimeNotification, object: nil)
-    }
-    
-    private func addCurrTimeObserver() {
-        $currentTime
-            .receive(on: RunLoop.main)
-            .sink { [weak self] value in
-                guard let `self` else { return }
-                guard duration > 0 else {
-                    musicProgress = 0
-                    return
-                }
-                musicProgress = CGFloat(currentTime / duration)
-            }
-            .store(in: &cancellables)
     }
     
     private func setupAudioSession() {

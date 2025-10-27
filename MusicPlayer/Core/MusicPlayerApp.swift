@@ -32,7 +32,6 @@ struct MusicPlayerApp: App {
             .environment(\.musicPlayerVisibility, $musicPlayerVisibility)
             .environment(\.isNetworkConnected, networkMonitor.isConnected)
             .modelContainer(for: Song.self)
-            // Use Observation environment injection for NavigationRoute
             .environment(navigationRoute)
             .preferredColorScheme(.dark)
         }

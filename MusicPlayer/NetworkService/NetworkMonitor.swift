@@ -9,7 +9,7 @@ import Foundation
 import Network
 
 @Observable
-class NetworkMonitor {
+final class NetworkMonitor {
     var isConnected: Bool?
     var connectionType: NWInterface.InterfaceType?
     
@@ -36,7 +36,6 @@ class NetworkMonitor {
         }
         monitor.start(queue: queue)
     }
-    
     
     private func stopMonitoring() {
         monitor.cancel()

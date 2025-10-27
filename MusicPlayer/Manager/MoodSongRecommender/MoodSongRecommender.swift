@@ -9,7 +9,8 @@ import Foundation
 import SwiftData
 
 @MainActor
-final class MoodSongRecommender: ObservableObject {
+@Observable
+final class MoodSongRecommender {
     static let shared = MoodSongRecommender()
     private init() {}
     
@@ -19,8 +20,8 @@ final class MoodSongRecommender: ObservableObject {
         self.modelContext = context
     }
     
-    @Published var currentMood: String?
-    @Published var loadingState: LoadingState<[Song]> = .loading
+    var currentMood: String?
+    var loadingState: LoadingState<[Song]> = .loading
     
     // Public entry point: mood can be a free-form string (e.g., "happy", "sad", "angry", "calm", "focus")
     func fetchData(for mood: String) async {
@@ -51,7 +52,6 @@ final class MoodSongRecommender: ObservableObject {
 }
 
 // MARK: - Mood → Heuristics and filtering
-@MainActor
 private extension MoodSongRecommender {
     // Only use supported comparisons inside FetchDescriptor predicate
     func makeBroadFetchDescriptor(for moodKey: String) -> FetchDescriptor<Song> {

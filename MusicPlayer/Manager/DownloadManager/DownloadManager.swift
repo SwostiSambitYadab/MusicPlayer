@@ -38,13 +38,15 @@ enum DownloadState {
 
 @Observable
 class DownloadManager: NSObject {
+    
     static let shared = DownloadManager()
+    var downloadStateDict: [String: DownloadState] = [:]
+    
     @ObservationIgnored private var backgroundSession: URLSession!
     @ObservationIgnored private var modelContext: ModelContext?
     
     /// - Progress Dict to show download progress
     @ObservationIgnored private var progressDict: [String: Double] = [:]
-    var downloadStateDict: [String: DownloadState] = [:]
     
     /// - For Live Activity
     @ObservationIgnored private var activities: [Activity<DownloadAttributes>] = []
@@ -69,6 +71,7 @@ class DownloadManager: NSObject {
         self.modelContext = context
     }
     
+    /// -- Note
     /// - For Starting the download of the song
     /// Stored songId in downloadTask's task description .
     /// Used the songId in updating swiftData after download and updating progress

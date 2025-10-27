@@ -9,7 +9,7 @@ import SwiftUI
 import SDWebImageSwiftUI
 
 struct MusicPlayerMiniView: View {
-    @StateObject private var vm: MusicPlayerManager = .shared
+    @State private var vm: MusicPlayerManager = .shared
     @Environment(\.musicPlayerVisibility) private var visibility
     @Environment(NavigationRoute.self) private var router
     
@@ -37,6 +37,8 @@ struct MusicPlayerMiniView: View {
 
 #Preview {
     MusicPlayerMiniView()
+        .environment(NavigationRoute())
+        .preferredColorScheme(.dark)
 }
 
 extension MusicPlayerMiniView {

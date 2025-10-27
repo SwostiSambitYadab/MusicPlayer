@@ -22,7 +22,7 @@ struct SongListView: View {
     @Query(animation: .smooth) private var songs: [Song]
     
     @State private var downloadManager: DownloadManager = .shared
-    @StateObject private var moodVM: MoodSongRecommender = .shared
+    @State private var moodVM: MoodSongRecommender = .shared
     
     @State private var showLikedSongs: Bool = false
     @State private var loadingState: LoadingState<[Song]> = .loading

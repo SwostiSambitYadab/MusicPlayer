@@ -11,6 +11,7 @@ import SwiftData
 struct DownloadedSongList: View {
     @Environment(NavigationRoute.self) private var router
     @Environment(\.musicPlayerVisibility) private var isMiniPlayerVisible
+    
     let songs: [Song]
     
     var body: some View {
